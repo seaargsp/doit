@@ -9,18 +9,22 @@ import {
   Alert,
   Switch,
   Platform,
+  Image,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 
 import { RootStackParamList } from '../types/Navigation';
-import { Task, TaskFormData, RepeatPattern, NOTIFICATION_OPTIONS, REPEAT_OPTIONS } from '../types/Task';
+import { Task, TaskFormData, RepeatPattern, NOTIFICATION_OPTIONS, REPEAT_OPTIONS, AttachedFile } from '../types/Task';
 import { StorageService } from '../services/StorageService';
 import { NotificationService } from '../services/NotificationService';
 import { TaskUtils } from '../utils/TaskUtils';
+import { useTheme } from '../contexts/ThemeContext';
 
 type TaskFormScreenProps = {
   route: RouteProp<RootStackParamList, 'TaskForm'>;
@@ -30,6 +34,7 @@ type TaskFormScreenProps = {
 export default function TaskFormScreen({ route, navigation }: TaskFormScreenProps) {
   const { taskId, mode } = route.params;
   const isEditMode = mode === 'edit';
+  const { colors } = useTheme();
 
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
@@ -38,12 +43,15 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
     dueTime: undefined,
     notificationOffsets: [],
     repeatPattern: 'none',
+    attachedFile: undefined,
   });
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [hasDueDate, setHasDueDate] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const styles = createStyles(colors);
 
   useEffect(() => {
     if (isEditMode && taskId) {
@@ -63,6 +71,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
           dueTime: dueDateTime,
           notificationOffsets: task.notificationOffsets || [],
           repeatPattern: task.repeatPattern,
+          attachedFile: task.attachedFile,
         });
         setHasDueDate(!!task.dueDateTime);
       }
@@ -97,6 +106,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
         dueDateTime,
         notificationOffsets: formData.notificationOffsets.length > 0 ? formData.notificationOffsets : undefined,
         repeatPattern: formData.repeatPattern,
+        attachedFile: formData.attachedFile,
       };
 
       if (isEditMode && taskId) {
@@ -149,6 +159,104 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
     if (selectedTime) {
       setFormData({ ...formData, dueTime: selectedTime });
     }
+  };
+
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant camera roll permissions to attach images.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const attachedFile: AttachedFile = {
+          uri: asset.uri,
+          type: 'image',
+          name: asset.fileName || `image_${Date.now()}.jpg`,
+          size: asset.fileSize,
+        };
+        setFormData({ ...formData, attachedFile });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant camera permissions to take photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const attachedFile: AttachedFile = {
+          uri: asset.uri,
+          type: 'image',
+          name: asset.fileName || `photo_${Date.now()}.jpg`,
+          size: asset.fileSize,
+        };
+        setFormData({ ...formData, attachedFile });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  const pickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const attachedFile: AttachedFile = {
+          uri: asset.uri,
+          type: 'document',
+          name: asset.name,
+          size: asset.size,
+        };
+        setFormData({ ...formData, attachedFile });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick document');
+    }
+  };
+
+  const removeAttachment = () => {
+    setFormData({ ...formData, attachedFile: undefined });
+  };
+
+  const showAttachmentOptions = () => {
+    Alert.alert(
+      'Attach File',
+      'Choose an option',
+      [
+        { text: 'Take Photo', onPress: takePhoto },
+        { text: 'Choose from Gallery', onPress: pickImage },
+        { text: 'Choose Document', onPress: pickDocument },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   };
 
   const toggleNotificationOffset = (offset: number) => {
@@ -310,6 +418,58 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
           </View>
         </View>
 
+        {/* File Attachment */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Attachment</Text>
+          {formData.attachedFile ? (
+            <View style={styles.attachmentContainer}>
+              {formData.attachedFile.type === 'image' ? (
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: formData.attachedFile.uri }}
+                    style={styles.attachmentPreview}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.attachmentInfo}>
+                    <Text style={styles.attachmentName} numberOfLines={1}>
+                      {formData.attachedFile.name}
+                    </Text>
+                    <Text style={styles.attachmentSize}>
+                      {formData.attachedFile.size ? `${(formData.attachedFile.size / 1024).toFixed(1)} KB` : 'Image'}
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.documentContainer}>
+                  <Ionicons name="document-outline" size={40} color={colors.primary} />
+                  <View style={styles.attachmentInfo}>
+                    <Text style={styles.attachmentName} numberOfLines={1}>
+                      {formData.attachedFile.name}
+                    </Text>
+                    <Text style={styles.attachmentSize}>
+                      {formData.attachedFile.size ? `${(formData.attachedFile.size / 1024).toFixed(1)} KB` : 'Document'}
+                    </Text>
+                  </View>
+                </View>
+              )}
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={removeAttachment}
+              >
+                <Ionicons name="close-circle" size={24} color={colors.error} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.attachButton}
+              onPress={showAttachmentOptions}
+            >
+              <Ionicons name="attach-outline" size={24} color={colors.primary} />
+              <Text style={styles.attachButtonText}>Add attachment</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
@@ -354,10 +514,10 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background,
   },
   form: {
     padding: 16,
@@ -368,26 +528,26 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     marginBottom: 8,
   },
   titleInput: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#000',
+    color: colors.text,
   },
   descriptionInput: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#000',
+    color: colors.text,
     minHeight: 80,
   },
   switchRow: {
@@ -473,5 +633,64 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  attachmentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  imageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  documentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  attachmentPreview: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  attachmentInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  attachmentName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  attachmentSize: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  removeButton: {
+    padding: 4,
+  },
+  attachButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+  },
+  attachButtonText: {
+    fontSize: 16,
+    color: colors.primary,
+    marginLeft: 8,
+    fontWeight: '500',
   },
 });

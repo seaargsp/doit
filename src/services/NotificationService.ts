@@ -1,22 +1,35 @@
 import * as Notifications from 'expo-notifications';
 import { Task } from '../types/Task';
 
+// Check if notifications are supported (fallback for Expo Go)
+let isNotificationSupported = true;
+
 // Configure notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch (error) {
+  console.warn('Notifications not fully supported in this environment:', error);
+  isNotificationSupported = false;
+}
 
 export class NotificationService {
   /**
    * Request notification permissions
    */
   static async requestPermissions(): Promise<boolean> {
+    if (!isNotificationSupported) {
+      console.warn('Notifications not supported in this environment');
+      return false;
+    }
+
     try {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
@@ -28,7 +41,7 @@ export class NotificationService {
 
       return finalStatus === 'granted';
     } catch (error) {
-      console.error('Error requesting notification permissions:', error);
+      console.warn('Failed to request notification permissions:', error);
       return false;
     }
   }
@@ -37,6 +50,11 @@ export class NotificationService {
    * Schedule notifications for a task
    */
   static async scheduleTaskNotifications(task: Task): Promise<void> {
+    if (!isNotificationSupported) {
+      console.warn('Notifications not supported - skipping notification scheduling');
+      return;
+    }
+
     if (!task.dueDateTime || !task.notificationOffsets || task.notificationOffsets.length === 0) {
       return;
     }
@@ -44,7 +62,8 @@ export class NotificationService {
     try {
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
-        throw new Error('Notification permissions not granted');
+        console.warn('Notification permissions not granted - skipping notifications');
+        return;
       }
 
       const dueDate = new Date(task.dueDateTime);
@@ -84,6 +103,10 @@ export class NotificationService {
    * Cancel all notifications for a task
    */
   static async cancelTaskNotifications(taskId: string): Promise<void> {
+    if (!isNotificationSupported) {
+      return;
+    }
+
     try {
       const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
       
@@ -103,6 +126,10 @@ export class NotificationService {
    * Update notifications for a task (cancel old ones and schedule new ones)
    */
   static async updateTaskNotifications(task: Task): Promise<void> {
+    if (!isNotificationSupported) {
+      return;
+    }
+    
     await this.cancelTaskNotifications(task.id);
     await this.scheduleTaskNotifications(task);
   }
@@ -111,6 +138,10 @@ export class NotificationService {
    * Cancel all notifications for completed task (optional)
    */
   static async handleTaskCompletion(taskId: string, cancelNotifications: boolean = true): Promise<void> {
+    if (!isNotificationSupported) {
+      return;
+    }
+    
     if (cancelNotifications) {
       await this.cancelTaskNotifications(taskId);
     }

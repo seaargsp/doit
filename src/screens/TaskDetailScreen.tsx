@@ -7,6 +7,9 @@ import {
   StyleSheet,
   Alert,
   Linking,
+  Image,
+  Modal,
+  Dimensions,
 } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,6 +20,7 @@ import { Task, NOTIFICATION_OPTIONS } from '../types/Task';
 import { StorageService } from '../services/StorageService';
 import { NotificationService } from '../services/NotificationService';
 import { TaskUtils } from '../utils/TaskUtils';
+import { useTheme } from '../contexts/ThemeContext';
 
 type TaskDetailScreenProps = {
   route: RouteProp<RootStackParamList, 'TaskDetail'>;
@@ -25,8 +29,12 @@ type TaskDetailScreenProps = {
 
 export default function TaskDetailScreen({ route, navigation }: TaskDetailScreenProps) {
   const { taskId } = route.params;
+  const { colors } = useTheme();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+
+  const styles = createStyles(colors);
 
   useEffect(() => {
     loadTask();
@@ -162,6 +170,47 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
     );
   };
 
+  const renderAttachment = () => {
+    if (!task?.attachedFile) {
+      return null;
+    }
+
+    const { attachedFile } = task;
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Attachment</Text>
+        {attachedFile.type === 'image' ? (
+          <TouchableOpacity
+            style={styles.imageContainer}
+            onPress={() => setImageModalVisible(true)}
+          >
+            <Image
+              source={{ uri: attachedFile.uri }}
+              style={styles.attachmentImage}
+              resizeMode="cover"
+            />
+            <View style={styles.imageOverlay}>
+              <Ionicons name="expand-outline" size={24} color="#fff" />
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.documentContainer}>
+            <Ionicons name="document-outline" size={40} color={colors.primary} />
+            <View style={styles.attachmentInfo}>
+              <Text style={styles.attachmentName} numberOfLines={2}>
+                {attachedFile.name}
+              </Text>
+              <Text style={styles.attachmentSize}>
+                {attachedFile.size ? `${(attachedFile.size / 1024).toFixed(1)} KB` : 'Document'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -237,6 +286,9 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
         {/* Notifications */}
         {renderNotifications()}
 
+        {/* Attachment */}
+        {renderAttachment()}
+
         {/* Metadata */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Details</Text>
@@ -281,14 +333,45 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Image Modal */}
+      <Modal
+        visible={imageModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.modalCloseArea}
+            onPress={() => setImageModalVisible(false)}
+          >
+            <View style={styles.modalContent}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setImageModalVisible(false)}
+              >
+                <Ionicons name="close" size={30} color="#fff" />
+              </TouchableOpacity>
+              {task?.attachedFile?.type === 'image' && (
+                <Image
+                  source={{ uri: task.attachedFile.uri }}
+                  style={styles.fullImage}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -463,5 +546,80 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF3B30',
     marginLeft: 8,
+  },
+  // Attachment styles
+  imageContainer: {
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  attachmentImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+  },
+  imageOverlay: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: 6,
+  },
+  documentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    marginTop: 8,
+  },
+  attachmentInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  attachmentName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 2,
+  },
+  attachmentSize: {
+    fontSize: 12,
+    color: '#666',
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseArea: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    position: 'relative',
+    width: '90%',
+    height: '80%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: 6,
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%',
   },
 });

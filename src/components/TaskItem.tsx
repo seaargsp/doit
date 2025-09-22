@@ -118,6 +118,19 @@ export default function TaskItem({
             </View>
           )}
 
+          {task.attachedFile && (
+            <View style={styles.attachmentContainer}>
+              <Ionicons
+                name={task.attachedFile.type === 'image' ? 'image-outline' : 'document-outline'}
+                size={14}
+                color={colors.textSecondary}
+              />
+              <Text style={[styles.attachmentText, isCompleted && styles.completedText]}>
+                {task.attachedFile.type === 'image' ? 'Image' : 'Document'}
+              </Text>
+            </View>
+          )}
+
           {task.notificationOffsets && task.notificationOffsets.length > 0 && (
             <View style={styles.notificationContainer}>
               <Ionicons
@@ -208,6 +221,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textSecondary,
     marginLeft: 4,
     textTransform: 'capitalize',
+  },
+  attachmentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+    marginBottom: 4,
+  },
+  attachmentText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginLeft: 4,
   },
   notificationContainer: {
     marginRight: 12,

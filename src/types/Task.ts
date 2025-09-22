@@ -1,5 +1,12 @@
 export type RepeatPattern = "none" | "daily" | "weekly" | "monthly";
 
+export interface AttachedFile {
+  uri: string;
+  type: 'image' | 'document';
+  name: string;
+  size?: number;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -9,6 +16,7 @@ export interface Task {
   repeatPattern: RepeatPattern;
   createdAt: string; // ISO 8601
   completedAt?: string; // ISO 8601, null if not completed
+  attachedFile?: AttachedFile; // Optional file attachment
 }
 
 export interface TaskFormData {
@@ -18,6 +26,7 @@ export interface TaskFormData {
   dueTime?: Date;
   notificationOffsets: number[];
   repeatPattern: RepeatPattern;
+  attachedFile?: AttachedFile;
 }
 
 export type NotificationOffset = {

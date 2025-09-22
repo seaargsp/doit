@@ -39,9 +39,10 @@ export class TaskUtils {
 
   /**
    * Sort tasks for the To-Do tab:
-   * 1. Incomplete tasks with due dates (earliest first)
-   * 2. Incomplete tasks without due dates (oldest created first)
-   * 3. Recently completed tasks (most recently completed first)
+   * 1. Upcoming tasks (due within 24 hours, earliest first)
+   * 2. Other incomplete tasks with due dates (earliest first)
+   * 3. Incomplete tasks without due dates (oldest created first)
+   * 4. Recently completed tasks (most recently completed first)
    */
   static sortForTodoTab(tasks: Task[]): Task[] {
     return tasks.sort((a, b) => {
@@ -59,7 +60,22 @@ export class TaskUtils {
         return bCompletedAt - aCompletedAt;
       }
 
-      // Both incomplete - sort by due date, then creation date
+      // Both incomplete - prioritize upcoming tasks
+      const aUpcoming = this.isUpcoming(a);
+      const bUpcoming = this.isUpcoming(b);
+
+      // Upcoming tasks come first
+      if (aUpcoming && !bUpcoming) return -1;
+      if (!aUpcoming && bUpcoming) return 1;
+
+      // Both upcoming - sort by due date (earliest first)
+      if (aUpcoming && bUpcoming) {
+        const aDueDate = new Date(a.dueDateTime!).getTime();
+        const bDueDate = new Date(b.dueDateTime!).getTime();
+        return aDueDate - bDueDate;
+      }
+
+      // Neither upcoming - continue with original logic
       const aDueDate = a.dueDateTime ? new Date(a.dueDateTime).getTime() : null;
       const bDueDate = b.dueDateTime ? new Date(b.dueDateTime).getTime() : null;
 
@@ -196,6 +212,20 @@ export class TaskUtils {
         minute: '2-digit',
       });
     }
+  }
+
+  /**
+   * Check if a task is upcoming (due within the next 24 hours)
+   */
+  static isUpcoming(task: Task): boolean {
+    if (!task.dueDateTime || this.isCompleted(task)) return false;
+    
+    const now = new Date();
+    const dueDate = new Date(task.dueDateTime);
+    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    
+    // Task is upcoming if it's due within the next 24 hours and not overdue
+    return dueDate <= twentyFourHoursFromNow && dueDate >= now;
   }
 
   /**

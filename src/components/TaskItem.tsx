@@ -29,6 +29,7 @@ export default function TaskItem({
   const { colors } = useTheme();
   const isCompleted = TaskUtils.isCompleted(task);
   const isOverdue = task.dueDateTime && !isCompleted && TaskUtils.isOverdue(task.dueDateTime);
+  const isUpcoming = !isCompleted && TaskUtils.isUpcoming(task);
   const styles = createStyles(colors);
 
   const handleCheckboxPress = () => {
@@ -63,15 +64,26 @@ export default function TaskItem({
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Text
-          style={[
-            styles.title,
-            isCompleted && styles.completedText,
-          ]}
-          numberOfLines={2}
-        >
-          {task.title}
-        </Text>
+        <View style={styles.titleContainer}>
+          {isUpcoming && (
+            <Ionicons
+              name="warning"
+              size={16}
+              color={colors.warning}
+              style={styles.warningIcon}
+            />
+          )}
+          <Text
+            style={[
+              styles.title,
+              isCompleted && styles.completedText,
+              isUpcoming && styles.upcomingTitle,
+            ]}
+            numberOfLines={2}
+          >
+            {task.title}
+          </Text>
+        </View>
 
         {task.description && (
           <Text
@@ -232,6 +244,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginLeft: 4,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  warningIcon: {
+    marginRight: 6,
+  },
+  upcomingTitle: {
+    fontWeight: '600',
+    color: colors.warning,
   },
   notificationContainer: {
     marginRight: 12,

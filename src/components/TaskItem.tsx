@@ -32,14 +32,6 @@ export default function TaskItem({
   const isUpcoming = !isCompleted && TaskUtils.isUpcoming(task);
   const styles = createStyles(colors);
 
-  const handleCheckboxPress = () => {
-    if (showCompleted && isCompleted) {
-      // Don't allow uncompleting from completed tab
-      return;
-    }
-    onToggleComplete();
-  };
-
   return (
     <TouchableOpacity
       style={[
@@ -51,28 +43,12 @@ export default function TaskItem({
       onLongPress={onLongPress}
       activeOpacity={0.7}
     >
-      <TouchableOpacity
-        style={styles.checkbox}
-        onPress={handleCheckboxPress}
-        disabled={showCompleted && isCompleted}
-      >
-        <Ionicons
-          name={isCompleted ? 'checkbox' : 'checkbox-outline'}
-          size={24}
-          color={isCompleted ? colors.primary : colors.textMuted}
-        />
-      </TouchableOpacity>
-
       <View style={styles.content}>
         <View style={styles.titleContainer}>
-          {isUpcoming && (
-            <Ionicons
-              name="warning"
-              size={16}
-              color={colors.warning}
-              style={styles.warningIcon}
-            />
-          )}
+          {/* Category icon based on task state */}
+          <Text style={styles.categoryIcon}>
+            {!isCompleted && isUpcoming ? '⚠️' : task.dueDateTime ? '📅' : '📝'}
+          </Text>
           <Text
             style={[
               styles.title,
@@ -180,10 +156,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: colors.error,
   },
-  checkbox: {
-    marginRight: 12,
-    marginTop: 2,
-  },
   content: {
     flex: 1,
   },
@@ -252,6 +224,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   warningIcon: {
     marginRight: 6,
+  },
+  categoryIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   upcomingTitle: {
     fontWeight: '600',

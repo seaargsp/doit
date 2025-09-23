@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -13,8 +14,12 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   visible = true,
 }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   if (!visible) return null;
+
+  // Calculate dynamic bottom position based on safe area
+  const bottomPosition = 88 + (insets.bottom > 0 ? insets.bottom : 0);
 
   return (
     <TouchableOpacity
@@ -23,6 +28,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         {
           backgroundColor: colors.primary,
           shadowColor: colors.text,
+          bottom: bottomPosition,
         },
       ]}
       onPress={onPress}
@@ -36,7 +42,6 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 88, // Above the tab bar + dots
     right: 20,
     width: 56,
     height: 56,

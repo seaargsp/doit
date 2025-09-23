@@ -13,6 +13,7 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -36,6 +37,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   const { taskId, mode } = route.params;
   const isEditMode = mode === 'edit';
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const IconComponent = getIconComponent();
 
@@ -569,7 +571,10 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
       >
         <View style={styles.modalOverlay}>
           <Pressable style={styles.backdrop} onPress={() => setAttachmentOptionsVisible(false)} />
-          <View style={styles.bottomSheet}>
+          <View style={[
+            styles.bottomSheet,
+            { paddingBottom: 16 + (insets.bottom > 0 ? insets.bottom : 0) }
+          ]}>
             <TouchableOpacity
               style={styles.optionButton}
               onPress={() => handleAttachmentAction(takePhoto)}
@@ -624,7 +629,10 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
       </ScrollView>
 
       {/* Sticky Buttons */}
-      <View style={styles.stickyButtonContainer}>
+      <View style={[
+        styles.stickyButtonContainer,
+        { paddingBottom: 16 + (insets.bottom > 0 ? insets.bottom : 0) }
+      ]}>
         <TouchableOpacity
           style={[styles.button, styles.cancelButton]}
           onPress={handleCancel}

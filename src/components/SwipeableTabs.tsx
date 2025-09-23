@@ -8,6 +8,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../contexts/ThemeContext';
 import { getIconComponent } from '../utils/IconUtils';
@@ -30,6 +31,7 @@ export const SwipeableTabs: React.FC<SwipeableTabsProps> = ({
   initialTab = 0,
 }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [currentTab, setCurrentTab] = useState(initialTab);
   const scrollViewRef = React.useRef<ScrollView>(null);
 
@@ -75,7 +77,13 @@ export const SwipeableTabs: React.FC<SwipeableTabsProps> = ({
       </ScrollView>
 
       {/* Bottom Section */}
-      <View style={[styles.bottomSection, { backgroundColor: colors.surface }]}>
+      <View style={[
+        styles.bottomSection, 
+        { 
+          backgroundColor: colors.surface,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+        }
+      ]}>
         {/* Dots Indicator */}
         <View style={styles.dotsContainer}>
           {children.map((_, index) => (

@@ -50,6 +50,17 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [hasDueDate, setHasDueDate] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Store previous due date options when toggling off
+  const [preservedDueDate, setPreservedDueDate] = useState<Date | undefined>();
+  const [preservedDueTime, setPreservedDueTime] = useState<Date | undefined>();
+  const [preservedNotifications, setPreservedNotifications] = useState<number[]>([]);
+  
+  // Alarm feature
+  const [hasAlarm, setHasAlarm] = useState(false);
+  
+  // Custom repeat pattern state
+    const [customDays, setCustomDays] = useState<number[]>([]); // Mon-Sun
 
   const styles = createStyles(colors);
 
@@ -281,7 +292,6 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
       <View style={styles.form}>
         {/* Title */}
         <View style={styles.section}>
-          <Text style={styles.label}>Title *</Text>
           <TextInput
             style={styles.titleInput}
             placeholder="Enter task title"
@@ -293,7 +303,6 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
         {/* Description */}
         <View style={styles.section}>
-          <Text style={styles.label}>Description</Text>
           <TextInput
             style={styles.descriptionInput}
             placeholder="Enter task description (optional)"
@@ -314,10 +323,24 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
               onValueChange={(value) => {
                 setHasDueDate(value);
                 if (!value) {
+                  // Preserve current values when turning off
+                  setPreservedDueDate(formData.dueDate);
+                  setPreservedDueTime(formData.dueTime);
+                  setPreservedNotifications(formData.notificationOffsets);
+                  
                   setFormData({
                     ...formData,
                     dueDate: undefined,
                     dueTime: undefined,
+                    notificationOffsets: [],
+                  });
+                } else {
+                  // Restore preserved values when turning back on
+                  setFormData({
+                    ...formData,
+                    dueDate: preservedDueDate,
+                    dueTime: preservedDueTime,
+                    notificationOffsets: preservedNotifications,
                   });
                 }
               }}
@@ -327,11 +350,11 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
         {/* Date and Time Pickers */}
         {hasDueDate && (
-          <>
-            <View style={styles.section}>
-              <Text style={styles.label}>Date</Text>
+          <View style={styles.section}>
+            <Text style={styles.label}>Date & Time</Text>
+            <View style={styles.dateTimeRow}>
               <TouchableOpacity
-                style={styles.dateButton}
+                style={[styles.dateButton, styles.halfWidth]}
                 onPress={() => setShowDatePicker(true)}
               >
                 <Text style={styles.dateButtonText}>
@@ -342,12 +365,9 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
                 </Text>
                 <Ionicons name="calendar-outline" size={20} color="#007AFF" />
               </TouchableOpacity>
-            </View>
 
-            <View style={styles.section}>
-              <Text style={styles.label}>Time</Text>
               <TouchableOpacity
-                style={styles.dateButton}
+                style={[styles.dateButton, styles.halfWidth]}
                 onPress={() => setShowTimePicker(true)}
               >
                 <Text style={styles.dateButtonText}>
@@ -362,17 +382,29 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
                 <Ionicons name="time-outline" size={20} color="#007AFF" />
               </TouchableOpacity>
             </View>
-          </>
+          </View>
         )}
 
         {/* Notifications */}
         {hasDueDate && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Notifications</Text>
-            <View style={styles.notificationGrid}>
-              {NOTIFICATION_OPTIONS.map((option) => {
-                const isSelected = formData.notificationOffsets.includes(option.value);
-                return (
+          <>
+            {/* Alarm Toggle */}
+            <View style={styles.section}>
+              <View style={styles.switchRow}>
+                <Text style={styles.switchLabel}>Alarm</Text>
+                <Switch
+                  value={hasAlarm}
+                  onValueChange={setHasAlarm}
+                />
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.label}>Notifications</Text>
+              <View style={styles.notificationGrid}>
+                {NOTIFICATION_OPTIONS.map((option) => {
+                  const isSelected = formData.notificationOffsets.includes(option.value);
+                  return (
                   <TouchableOpacity
                     key={option.value}
                     style={[
@@ -394,6 +426,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
               })}
             </View>
           </View>
+          </>
         )}
 
         {/* Repeat Pattern */}
@@ -418,9 +451,45 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
           </View>
         </View>
 
+        {/* Custom Weekday Selection */}
+        {formData.repeatPattern === 'custom' && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Select Days</Text>
+            <View style={styles.weekdayContainer}>
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => {
+                const isSelected = customDays.includes(index);
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.weekdayCircle,
+                      isSelected && styles.weekdayCircleSelected,
+                    ]}
+                    onPress={() => {
+                      if (isSelected) {
+                        setCustomDays(customDays.filter(d => d !== index));
+                      } else {
+                        setCustomDays([...customDays, index].sort());
+                      }
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.weekdayText,
+                        isSelected && styles.weekdayTextSelected,
+                      ]}
+                    >
+                      {day}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {/* File Attachment */}
         <View style={styles.section}>
-          <Text style={styles.label}>Attachment</Text>
           {formData.attachedFile ? (
             <View style={styles.attachmentContainer}>
               {formData.attachedFile.type === 'image' ? (
@@ -555,6 +624,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  switchLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
+  },
   dateButton: {
     backgroundColor: '#fff',
     borderWidth: 1,
@@ -564,6 +638,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  halfWidth: {
+    flex: 1,
   },
   dateButtonText: {
     fontSize: 16,
@@ -692,5 +774,32 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.primary,
     marginLeft: 8,
     fontWeight: '500',
+  },
+  weekdayContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+  },
+  weekdayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  weekdayCircleSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  weekdayText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  weekdayTextSelected: {
+    color: 'white',
   },
 });

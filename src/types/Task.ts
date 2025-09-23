@@ -1,4 +1,4 @@
-export type RepeatPattern = "none" | "daily" | "weekly" | "monthly";
+export type RepeatPattern = "none" | "daily" | "weekly" | "monthly" | "custom";
 
 export interface AttachedFile {
   uri: string;
@@ -51,4 +51,5 @@ export const REPEAT_OPTIONS: { label: string; value: RepeatPattern }[] = [
   { label: "Daily", value: "daily" },
   { label: "Weekly", value: "weekly" },
   { label: "Monthly", value: "monthly" },
+  { label: "Custom", value: "custom" },
 ];

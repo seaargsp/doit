@@ -65,10 +65,6 @@ export default function TodoScreen() {
     setContextMenuVisible(true);
   };
 
-  const handleAddTask = () => {
-    navigation.navigate('TaskForm', { mode: 'create' });
-  };
-
   const handleEditTask = () => {
     if (selectedTask) {
       navigation.navigate('TaskForm', { taskId: selectedTask.id, mode: 'edit' });
@@ -138,7 +134,6 @@ export default function TodoScreen() {
       <SearchHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onAddPress={handleAddTask}
         placeholder="Search tasks..."
       />
 

@@ -2,7 +2,6 @@ import React from 'react';
 import {
   View,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Platform,
 } from 'react-native';
@@ -13,14 +12,12 @@ import { useTheme } from '../contexts/ThemeContext';
 interface SearchHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  onAddPress: () => void;
   placeholder?: string;
 }
 
 export default function SearchHeader({
   searchQuery,
   onSearchChange,
-  onAddPress,
   placeholder = 'Search tasks...',
 }: SearchHeaderProps) {
   const insets = useSafeAreaInsets();
@@ -30,7 +27,7 @@ export default function SearchHeader({
   return (
     <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
+        <Ionicons name="search-outline" size={20} color={colors.textMuted} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder={placeholder}
@@ -41,22 +38,12 @@ export default function SearchHeader({
           returnKeyType="search"
         />
       </View>
-      
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={onAddPress}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="add" size={28} color={colors.primary} />
-      </TouchableOpacity>
     </View>
   );
 }
 
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 10,
     backgroundColor: colors.surface,
@@ -78,15 +65,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     }),
   },
   searchContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
     borderRadius: 10,
     paddingHorizontal: 12,
-    marginRight: 12,
     borderWidth: 1,
     borderColor: colors.border,
+    paddingVertical: 2, // Add padding to center vertically
   },
   searchIcon: {
     marginRight: 8,
@@ -96,15 +82,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     height: 40,
     fontSize: 16,
     color: colors.text,
-  },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.primary,
+    textAlignVertical: 'center', // Android-specific vertical centering
   },
 });

@@ -40,6 +40,27 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
     loadTask();
   }, [taskId]);
 
+  // Update header with edit and delete buttons
+  useEffect(() => {
+    if (task) {
+      navigation.setOptions({
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', marginRight: 10 }}>
+            <TouchableOpacity
+              onPress={handleEdit}
+              style={{ marginRight: 15 }}
+            >
+              <Ionicons name="pencil" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDelete}>
+              <Ionicons name="trash" size={24} color={colors.error} />
+            </TouchableOpacity>
+          </View>
+        ),
+      });
+    }
+  }, [task, navigation, colors]);
+
   const loadTask = async () => {
     try {
       const taskData = await StorageService.getTaskById(taskId);
@@ -303,35 +324,25 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
         </View>
       </View>
 
-      {/* Action Buttons */}
-      <View style={styles.buttonContainer}>
-        {!isCompleted && (
+      {/* Complete/Undo Button at Bottom */}
+      <View style={styles.bottomButtonContainer}>
+        {!isCompleted ? (
           <TouchableOpacity
             style={styles.completeButton}
             onPress={handleMarkComplete}
           >
             <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-            <Text style={styles.completeButtonText}>Mark as Completed</Text>
+            <Text style={styles.completeButtonText}>Complete Task</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.undoButton}
+            onPress={handleMarkComplete}
+          >
+            <Ionicons name="arrow-undo-outline" size={20} color="#fff" />
+            <Text style={styles.undoButtonText}>Undo Completed</Text>
           </TouchableOpacity>
         )}
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={handleEdit}
-          >
-            <Ionicons name="pencil" size={20} color="#007AFF" />
-            <Text style={styles.editButtonText}>Edit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDelete}
-          >
-            <Ionicons name="trash" size={20} color="#FF3B30" />
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Image Modal */}
@@ -397,10 +408,11 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#000',
     marginRight: 12,
+    lineHeight: 34,
   },
   completedText: {
     textDecorationLine: 'line-through',
@@ -419,11 +431,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 8,
   },
   descriptionContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    paddingVertical: 4,
   },
   descriptionText: {
     fontSize: 16,
@@ -438,11 +446,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   dueDateContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    paddingVertical: 4,
   },
   dueDateText: {
     fontSize: 16,
@@ -494,6 +498,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
+  bottomButtonContainer: {
+    padding: 16,
+    paddingBottom: 32,
+  },
   completeButton: {
     backgroundColor: '#34C759',
     flexDirection: 'row',
@@ -504,6 +512,21 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 12,
   },
   completeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 8,
+  },
+  undoButton: {
+    backgroundColor: '#FF9500',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  undoButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',

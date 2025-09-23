@@ -65,10 +65,6 @@ export default function CompletedScreen() {
     setContextMenuVisible(true);
   };
 
-  const handleAddTask = () => {
-    navigation.navigate('TaskForm', { mode: 'create' });
-  };
-
   const handleEditTask = () => {
     if (selectedTask) {
       navigation.navigate('TaskForm', { taskId: selectedTask.id, mode: 'edit' });
@@ -122,7 +118,6 @@ export default function CompletedScreen() {
       <SearchHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onAddPress={handleAddTask}
         placeholder="Search completed tasks..."
       />
 

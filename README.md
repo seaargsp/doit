@@ -1,103 +1,123 @@
-# DoIt - Advanced To-Do App — Complete Design Document
+# DoIt - To-Do App Requirements
 
-## Overview
-**DoIt** is a **comprehensive to-do list mobile application** built with **Expo SDK 54.0.0 (React Native)** and **TypeScript**.  
-The app is **completely offline-first** and stores all user data in **local storage** with **AsyncStorage**.  
+## **Core App Structure**
+- **Framework**: Expo SDK 54.0+ with React Native + TypeScript
+- **Storage**: Local-only with AsyncStorage (no backend)
+- **Navigation**: React Navigation native stack with theme integration
+- **Safe Area**: Full safe area inset support for gesture and button navigation
 
-### Key Features
-✅ **Complete Task Management**: Create, edit, delete, and complete tasks with rich metadata  
-✅ **Modern Swipeable Navigation**: Instagram-style horizontal swipe navigation with dot indicators  
-✅ **Floating Action Button**: Material Design-inspired FAB for quick task creation  
-✅ **Enhanced Search Experience**: Full-width search header with native platform icons  
-✅ **Improved Task Detail View**: Larger titles, plain text styling, and intuitive header actions  
-✅ **Advanced Form Features**: Due date preservation, alarm toggles, and custom repeat patterns  
-✅ **Adaptive Theme System**: Automatic dark/light mode detection with manual override  
-✅ **File Attachments**: Support for images and documents with local storage  
-✅ **Local Notifications**: Configurable reminders compatible with native development builds  
-✅ **Custom Repeat Patterns**: Weekly custom day selection with interactive weekday circles  
-✅ **Native Platform Icons**: Material Design icons on Android, SF Symbols-style on iOS  
-✅ **Optimized Bundle**: Cleaned codebase with unused dependencies removed  
-✅ **Context Menu Actions**: Long-press interactions for task management  
-✅ **Dual List Architecture**: Active tasks and completed tasks with smart visibility rules  
+## **UI Architecture**
 
----
+### **Main Navigation**
+- Swipeable horizontal tabs (Instagram-style) with dot indicators
+- Two main screens: Todo List and Completed List
+- Floating Action Button (Material Design FAB) for quick task creation
+- Safe area adaptive positioning for navigation bars
 
-## Technical Architecture
+### **Theme System**
+- Automatic light/dark mode detection with manual override
+- Consistent color scheme across all components
+- Status bar integration with theme colors
 
-### Framework & Dependencies
-- **Expo SDK 54.0.0** - React Native development platform
-- **TypeScript** - Type-safe JavaScript development
-- **React Navigation** - Native stack navigation with theme integration
-- **AsyncStorage** - Local data persistence
-- **expo-notifications** - Local notification scheduling (native builds compatible)
-- **expo-image-picker** - Camera and photo library access
-- **expo-document-picker** - Document selection functionality
-- **react-native-vector-icons** - Platform-specific native icon libraries (Material Design + SF Symbols-style)
+### **Search Experience**
+- Full-width search header with native platform icons
+- Real-time filtering across both Todo and Completed lists
+- Case-insensitive title and description matching
 
-### Project Structure
-```
-src/
-├── components/           # Reusable UI components
-│   ├── FloatingActionButton.tsx # Material Design FAB for task creation
-│   ├── SearchHeader.tsx     # Full-width search with native platform icons
-│   ├── SwipeableTabs.tsx    # Instagram-style horizontal swipe navigation
-│   ├── TaskContextMenu.tsx  # Long-press context menu
-│   └── TaskItem.tsx         # Task display with visual categorization
-├── contexts/            # React Context providers
-│   └── ThemeContext.tsx     # Adaptive theme management
-├── screens/             # Navigation screens
-│   ├── CompletedScreen.tsx  # Completed tasks list
-│   ├── MainScreen.tsx       # Main screen with swipeable tab container
-│   ├── TaskDetailScreen.tsx # Enhanced task details with header actions
-│   ├── TaskFormScreen.tsx   # Advanced form with preservation & custom patterns
-│   └── TodoScreen.tsx       # Active tasks list
-├── services/            # Business logic services
-│   ├── NotificationService.ts # Local notification management
-│   └── StorageService.ts     # AsyncStorage operations
-├── types/               # TypeScript type definitions
-│   ├── Navigation.ts        # Navigation type definitions
-│   ├── Task.ts             # Task data model with custom repeat patterns
-│   └── Theme.ts            # Theme system types
-└── utils/               # Utility functions
-    └── TaskUtils.ts         # Task operations and sorting logic
-```
+## **Task Management**
 
----
-
-## Core Data Models
-
-### Task Interface
+### **Task Data Model**
 ```typescript
-export type RepeatPattern = "none" | "daily" | "weekly" | "monthly" | "custom";
-
-export interface Task {
-  id: string;                    // UUID identifier
-  title: string;                 // Required task title
-  description?: string;          // Optional description (supports URLs)
-  dueDateTime?: string;          // ISO 8601 datetime string
-  notificationOffsets?: number[]; // Minutes before due date
-  repeatPattern: RepeatPattern;   // "none" | "daily" | "weekly" | "monthly" | "custom"
-  createdAt: string;             // ISO 8601 creation timestamp
-  completedAt?: string;          // ISO 8601 completion timestamp (nullable)
-  attachedFile?: AttachedFile;   // Optional file attachment
-}
-
-export interface AttachedFile {
-  uri: string;                   // Local file URI
-  type: 'image' | 'document';    // File type categorization
-  name: string;                  // Original filename
-  size?: number;                 // File size in bytes
+interface Task {
+  id: string;                    // UUID
+  title: string;                 // Required
+  description?: string;          // Optional with URL support
+  dueDateTime?: string;          // ISO 8601
+  notificationOffsets?: number[]; // Minutes before due
+  repeatPattern: "none" | "daily" | "weekly" | "monthly" | "custom";
+  customDays?: number[];         // For custom weekly patterns (0-6)
+  createdAt: string;            // ISO 8601
+  completedAt?: string;         // ISO 8601, null if active
+  attachedFile?: AttachedFile;  // Optional file attachment
 }
 ```
 
-### Theme System
-```typescript
-export interface ThemeColors {
-  // Core colors
-  primary: string;               // Brand/accent color
-  background: string;            // Main background
-  surface: string;               // Card/surface background
-  text: string;                  // Primary text
+### **Task Lists Behavior**
+- **Todo List**: Active tasks + completed tasks (< 24 hours) with strikethrough
+- **Completed List**: All completed tasks, newest first
+- **Auto-cleanup**: Remove completed tasks from Todo after 24 hours
+
+### **Task Actions**
+- Tap task → Detail view with enhanced styling
+- Long press → Context menu (Edit, Delete, Complete)
+- Swipe actions for quick completion
+
+## **Advanced Features**
+
+### **File Attachments**
+- Image capture via camera or photo library (expo-image-picker)
+- Document selection (expo-document-picker)
+- Local file storage with preview capabilities
+- Modal-based attachment picker (not Alert-based for Android compatibility)
+
+### **Notifications**
+- Local notifications using expo-notifications
+- Multiple reminder offsets per task
+- Smart scheduling (skip past times)
+- Cancel notifications on task completion/deletion
+
+### **Repeat Patterns**
+- Standard patterns: daily, weekly, monthly
+- Custom weekly patterns with interactive weekday selection
+- Auto-generate new tasks on completion with repeat patterns
+- Preserve original task in completed history
+
+### **Form Features**
+- Enhanced task creation/editing with sticky bottom buttons
+- Due date/time preservation when toggling features
+- Alarm toggle functionality
+- Custom repeat pattern UI with weekday circles
+- Safe area adaptive button positioning
+
+## **Technical Implementation**
+
+### **Navigation & Layout**
+- SafeAreaProvider wrapping entire app
+- useSafeAreaInsets() for dynamic padding
+- Adaptive bottom positioning for navigation bars
+- Consistent spacing across gesture and button navigation
+
+### **Icons & Styling**
+- react-native-vector-icons with Material Design icons
+- Platform-specific icon adaptation
+- Consistent sizing and color theming
+
+### **Error Handling**
+- Storage operation error handling
+- Form validation (non-empty titles)
+- Notification scheduling fallbacks
+- User feedback for all error states
+
+## **Development Build Compatibility**
+- Full expo-notifications functionality in development builds
+- File attachment features fully functional
+- Native icon libraries properly linked
+- Android-specific modal implementations for better UX
+
+## **Key User Flows**
+1. **Add Task**: FAB → Form → Save → Appears in Todo
+2. **Complete Task**: Detail view → Complete → Strikethrough → Auto-move after 24h
+3. **Edit Task**: Long press → Edit → Pre-filled form → Save
+4. **Delete Task**: Long press → Delete → Confirmation → Remove
+5. **Attach File**: Form → Add attachment → Modal picker → Select → Preview
+6. **Set Reminders**: Form → Notifications → Multiple offsets → Local scheduling
+7. **Custom Repeat**: Form → Repeat → Custom → Weekday selection → Auto-generation
+
+## **Platform Considerations**
+- Android navigation button vs gesture navigation adaptation
+- iOS safe area handling for different device types
+- Modal vs Alert implementation for better Android compatibility
+- Platform-specific icon and styling differences
   textSecondary: string;         // Secondary text
   textMuted: string;             // Muted/disabled text
   border: string;                // Border colors

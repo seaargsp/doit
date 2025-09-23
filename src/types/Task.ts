@@ -14,6 +14,7 @@ export interface Task {
   dueDateTime?: string; // ISO 8601
   notificationOffsets?: number[]; // minutes before due date
   repeatPattern: RepeatPattern;
+  customDays?: number[]; // Days of week for custom repeat (0=Monday, 6=Sunday)
   createdAt: string; // ISO 8601
   completedAt?: string; // ISO 8601, null if not completed
   attachedFile?: AttachedFile; // Optional file attachment

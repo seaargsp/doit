@@ -195,13 +195,12 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Notifications</Text>
-        <View style={styles.notificationList}>
+        <View style={styles.notificationChipsContainer}>
           {task.notificationOffsets.map((offset) => {
             const option = NOTIFICATION_OPTIONS.find(opt => opt.value === offset);
             return (
-              <View key={offset} style={styles.notificationItem}>
-                <IconComponent name={getIconName('notifications-outline')} size={16} color="#666" />
-                <Text style={styles.notificationText}>
+              <View key={offset} style={styles.notificationChip}>
+                <Text style={styles.notificationChipText}>
                   {option ? option.label : `${offset} minutes`} before
                 </Text>
               </View>
@@ -316,12 +315,42 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
         {task.repeatPattern !== 'none' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Repeat</Text>
-            <View style={styles.repeatContainer}>
-              <IconComponent name={getIconName('repeat-outline')} size={20} color="#666" />
-              <Text style={styles.repeatText}>
-                {task.repeatPattern.charAt(0).toUpperCase() + task.repeatPattern.slice(1)}
-              </Text>
-            </View>
+            {task.repeatPattern === 'custom' ? (
+              <View>
+                <View style={styles.repeatChip}>
+                  <Text style={styles.repeatChipText}>Custom</Text>
+                </View>
+                <View style={styles.weekdayContainer}>
+                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => {
+                    const isSelected = task.customDays?.includes(index) || false;
+                    return (
+                      <View
+                        key={index}
+                        style={[
+                          styles.weekdayCircle,
+                          isSelected && styles.weekdayCircleSelected,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.weekdayText,
+                            isSelected && styles.weekdayTextSelected,
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.repeatChip}>
+                <Text style={styles.repeatChipText}>
+                  {task.repeatPattern.charAt(0).toUpperCase() + task.repeatPattern.slice(1)}
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -455,7 +484,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   descriptionText: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary, // Lighter color as requested
     lineHeight: 22,
   },
   link: {
@@ -664,5 +693,68 @@ const createStyles = (colors: any) => StyleSheet.create({
   fullImage: {
     width: '100%',
     height: '100%',
+  },
+  // New repeat chip styles
+  repeatChip: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  repeatChipText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  // Weekday display styles
+  weekdayContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    marginTop: 8,
+  },
+  weekdayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  weekdayCircleSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  weekdayText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  weekdayTextSelected: {
+    color: 'white',
+  },
+  // New notification chip styles
+  notificationChipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  notificationChip: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  notificationChipText: {
+    fontSize: 14,
+    color: colors.text,
   },
 });

@@ -87,6 +87,9 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
           attachedFile: task.attachedFile,
         });
         setHasDueDate(!!task.dueDateTime);
+        if (task.repeatPattern === 'custom' && task.customDays) {
+          setCustomDays(task.customDays);
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to load task');
@@ -119,6 +122,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
         dueDateTime,
         notificationOffsets: formData.notificationOffsets.length > 0 ? formData.notificationOffsets : undefined,
         repeatPattern: formData.repeatPattern,
+        customDays: formData.repeatPattern === 'custom' ? customDays : undefined,
         attachedFile: formData.attachedFile,
       };
 

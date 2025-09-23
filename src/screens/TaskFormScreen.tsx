@@ -10,11 +10,12 @@ import {
   Switch,
   Platform,
   Image,
+  Modal,
+  Pressable,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 
@@ -52,6 +53,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [hasDueDate, setHasDueDate] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [attachmentOptionsVisible, setAttachmentOptionsVisible] = useState(false);
   
   // Store previous due date options when toggling off
   const [preservedDueDate, setPreservedDueDate] = useState<Date | undefined>();
@@ -62,7 +64,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   const [hasAlarm, setHasAlarm] = useState(false);
   
   // Custom repeat pattern state
-    const [customDays, setCustomDays] = useState<number[]>([]); // Mon-Sun
+  const [customDays, setCustomDays] = useState<number[]>([]); // Mon-Sun
 
   const styles = createStyles(colors);
 
@@ -71,6 +73,8 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
       loadTask();
     }
   }, [isEditMode, taskId]);
+
+  // (Removed focus effect; using Modal for attachment options instead of Alert)
 
   const loadTask = async () => {
     try {
@@ -264,16 +268,14 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   };
 
   const showAttachmentOptions = () => {
-    Alert.alert(
-      'Attach File',
-      'Choose an option',
-      [
-        { text: 'Take Photo', onPress: takePhoto },
-        { text: 'Choose from Gallery', onPress: pickImage },
-        { text: 'Choose Document', onPress: pickDocument },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    // Defer open by one tick so the original press doesn't propagate into the overlay
+    setTimeout(() => setAttachmentOptionsVisible(true), 0);
+  };
+
+  const handleAttachmentAction = (action: () => void) => {
+    // Close the modal first, then perform the action to avoid UI conflicts
+    setAttachmentOptionsVisible(false);
+    setTimeout(() => action(), 120);
   };
 
   const toggleNotificationOffset = (offset: number) => {
@@ -558,6 +560,47 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
         </View>
       </View>
 
+      {/* Attachment Options Modal */}
+      <Modal
+        animationType="fade"
+        transparent
+        visible={attachmentOptionsVisible}
+        onRequestClose={() => setAttachmentOptionsVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.backdrop} onPress={() => setAttachmentOptionsVisible(false)} />
+          <View style={styles.bottomSheet}>
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={() => handleAttachmentAction(takePhoto)}
+            >
+              <Text style={styles.optionText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={() => handleAttachmentAction(pickImage)}
+            >
+              <Text style={styles.optionText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={() => handleAttachmentAction(pickDocument)}
+            >
+              <Text style={styles.optionText}>Choose Document</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelModalButton}
+              onPress={() => setAttachmentOptionsVisible(false)}
+            >
+              <Text style={styles.optionText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Date/Time Pickers */}
       {showDatePicker && (
         <DateTimePicker
@@ -577,6 +620,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
           onChange={handleTimeChange}
         />
       )}
+
       </ScrollView>
 
       {/* Sticky Buttons */}
@@ -635,6 +679,48 @@ const createStyles = (colors: any) => StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 5,
+  },
+  // Modal / Bottom Sheet styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    flex: 1,
+  },
+  bottomSheet: {
+    backgroundColor: colors.surface,
+    padding: 12,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.border,
+  },
+  optionButton: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  cancelModalButton: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  optionText: {
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: '500',
   },
   section: {
     marginBottom: 24,

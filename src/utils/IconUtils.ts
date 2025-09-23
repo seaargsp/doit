@@ -32,6 +32,10 @@ export const iconMap = {
   'image-outline': 'image-outline',
   'image': 'image',
   
+  // Camera icons
+  'camera-outline': 'camera-outline',
+  'camera': 'camera',
+  
   // Edit/Action icons
   'pencil': 'pencil',
   'trash': 'delete',

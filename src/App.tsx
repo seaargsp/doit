@@ -51,7 +51,7 @@ function AppNavigator() {
           name="TaskDetail"
           component={TaskDetailScreen}
           options={{
-            title: 'Task Details',
+            title: '',
             headerBackTitle: '',
           }}
         />

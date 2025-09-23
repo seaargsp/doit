@@ -162,7 +162,6 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
 
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Description</Text>
         <View style={styles.descriptionContainer}>
           {parts.map((part, index) => {
             if (urlRegex.test(part)) {
@@ -272,8 +271,9 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
   const isOverdue = task.dueDateTime && !isCompleted && TaskUtils.isOverdue(task.dueDateTime);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
         {/* Title */}
         <View style={styles.header}>
           <Text style={[styles.title, isCompleted && styles.completedText]}>
@@ -292,7 +292,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
         {/* Due Date */}
         {task.dueDateTime && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Due Date</Text>
+            <Text style={styles.sectionTitle}>When</Text>
             <View style={styles.dueDateContainer}>
               <IconComponent
                 name={getIconName('time-outline')}
@@ -371,10 +371,11 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
             </Text>
           )}
         </View>
-      </View>
+        </View>
+      </ScrollView>
 
-      {/* Complete/Undo Button at Bottom */}
-      <View style={styles.bottomButtonContainer}>
+      {/* Complete/Undo Button at Bottom - Now Sticky */}
+      <View style={styles.stickyButtonContainer}>
         {!isCompleted ? (
           <TouchableOpacity
             style={styles.completeButton}
@@ -424,7 +425,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
           </TouchableOpacity>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -432,6 +433,12 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for sticky button
   },
   loadingContainer: {
     flex: 1,
@@ -459,7 +466,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000',
+    color: colors.text,
     marginRight: 12,
     lineHeight: 34,
   },
@@ -476,7 +483,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     marginBottom: 8,
   },
   descriptionContainer: {
@@ -550,6 +557,25 @@ const createStyles = (colors: any) => StyleSheet.create({
   bottomButtonContainer: {
     padding: 16,
     paddingBottom: 32,
+  },
+  stickyButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.background,
+    padding: 16,
+    paddingBottom: 32,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
   },
   completeButton: {
     backgroundColor: '#34C759',

@@ -6,12 +6,17 @@ The app is **completely offline-first** and stores all user data in **local stor
 
 ### Key Features
 ✅ **Complete Task Management**: Create, edit, delete, and complete tasks with rich metadata  
-✅ **Smart Visual Categorization**: Icon-based task categorization with urgent task prioritization  
+✅ **Modern Swipeable Navigation**: Instagram-style horizontal swipe navigation with dot indicators  
+✅ **Floating Action Button**: Material Design-inspired FAB for quick task creation  
+✅ **Enhanced Search Experience**: Full-width search header with native platform icons  
+✅ **Improved Task Detail View**: Larger titles, plain text styling, and intuitive header actions  
+✅ **Advanced Form Features**: Due date preservation, alarm toggles, and custom repeat patterns  
 ✅ **Adaptive Theme System**: Automatic dark/light mode detection with manual override  
 ✅ **File Attachments**: Support for images and documents with local storage  
-✅ **Local Notifications**: Configurable reminders compatible with Expo Go  
-✅ **Advanced Search**: Real-time filtering across all tasks  
-✅ **Repeat Patterns**: Automatic recurring task generation  
+✅ **Local Notifications**: Configurable reminders compatible with native development builds  
+✅ **Custom Repeat Patterns**: Weekly custom day selection with interactive weekday circles  
+✅ **Native Platform Icons**: Material Design icons on Android, SF Symbols-style on iOS  
+✅ **Optimized Bundle**: Cleaned codebase with unused dependencies removed  
 ✅ **Context Menu Actions**: Long-press interactions for task management  
 ✅ **Dual List Architecture**: Active tasks and completed tasks with smart visibility rules  
 
@@ -22,33 +27,36 @@ The app is **completely offline-first** and stores all user data in **local stor
 ### Framework & Dependencies
 - **Expo SDK 54.0.0** - React Native development platform
 - **TypeScript** - Type-safe JavaScript development
-- **React Navigation** - Bottom tabs + stack navigation with theme integration
+- **React Navigation** - Native stack navigation with theme integration
 - **AsyncStorage** - Local data persistence
-- **expo-notifications** - Local notification scheduling (with Expo Go compatibility)
+- **expo-notifications** - Local notification scheduling (native builds compatible)
 - **expo-image-picker** - Camera and photo library access
 - **expo-document-picker** - Document selection functionality
-- **Ionicons** - Icon library for UI elements
+- **react-native-vector-icons** - Platform-specific native icon libraries (Material Design + SF Symbols-style)
 
 ### Project Structure
 ```
 src/
 ├── components/           # Reusable UI components
-│   ├── SearchHeader.tsx     # Search functionality with theme support
+│   ├── FloatingActionButton.tsx # Material Design FAB for task creation
+│   ├── SearchHeader.tsx     # Full-width search with native platform icons
+│   ├── SwipeableTabs.tsx    # Instagram-style horizontal swipe navigation
 │   ├── TaskContextMenu.tsx  # Long-press context menu
 │   └── TaskItem.tsx         # Task display with visual categorization
 ├── contexts/            # React Context providers
 │   └── ThemeContext.tsx     # Adaptive theme management
 ├── screens/             # Navigation screens
 │   ├── CompletedScreen.tsx  # Completed tasks list
-│   ├── TaskDetailScreen.tsx # Task details and actions
-│   ├── TaskFormScreen.tsx   # Create/edit task form
+│   ├── MainScreen.tsx       # Main screen with swipeable tab container
+│   ├── TaskDetailScreen.tsx # Enhanced task details with header actions
+│   ├── TaskFormScreen.tsx   # Advanced form with preservation & custom patterns
 │   └── TodoScreen.tsx       # Active tasks list
 ├── services/            # Business logic services
 │   ├── NotificationService.ts # Local notification management
 │   └── StorageService.ts     # AsyncStorage operations
 ├── types/               # TypeScript type definitions
 │   ├── Navigation.ts        # Navigation type definitions
-│   ├── Task.ts             # Task data model
+│   ├── Task.ts             # Task data model with custom repeat patterns
 │   └── Theme.ts            # Theme system types
 └── utils/               # Utility functions
     └── TaskUtils.ts         # Task operations and sorting logic
@@ -60,13 +68,15 @@ src/
 
 ### Task Interface
 ```typescript
+export type RepeatPattern = "none" | "daily" | "weekly" | "monthly" | "custom";
+
 export interface Task {
   id: string;                    // UUID identifier
   title: string;                 // Required task title
   description?: string;          // Optional description (supports URLs)
   dueDateTime?: string;          // ISO 8601 datetime string
   notificationOffsets?: number[]; // Minutes before due date
-  repeatPattern: RepeatPattern;   // "none" | "daily" | "weekly" | "monthly"
+  repeatPattern: RepeatPattern;   // "none" | "daily" | "weekly" | "monthly" | "custom"
   createdAt: string;             // ISO 8601 creation timestamp
   completedAt?: string;          // ISO 8601 completion timestamp (nullable)
   attachedFile?: AttachedFile;   // Optional file attachment
@@ -103,6 +113,72 @@ export interface ThemeColors {
   tabBarInactiveTint: string;    // Inactive tab color
 }
 ```
+
+---
+
+## Major UI/UX Improvements
+
+### 1. Modern Navigation System
+**Swipeable Tabs with Dot Indicators**: Replaced traditional bottom tab navigation with Instagram-style horizontal swipe navigation featuring:
+- Smooth horizontal scrolling between Todo and Completed screens
+- Elegant dot indicator system showing current tab
+- Larger, more prominent tab icons at the bottom
+- Gesture-based navigation for intuitive user experience
+
+**Floating Action Button**: Added Material Design-inspired FAB for quick task creation:
+- Positioned strategically in bottom-right corner
+- Rounded square design with subtle shadow
+- Platform-adaptive visibility and styling
+- One-tap access to task creation
+
+### 2. Enhanced Search Experience
+**Full-Width Search Header**: Redesigned search interface with:
+- Edge-to-edge search input spanning full width
+- Native platform icons (magnifying glass) for consistency
+- Improved visual hierarchy and spacing
+- Real-time search across all task content
+
+### 3. Improved Task Detail Screen
+**Larger, More Readable Design**:
+- Increased title font size to 28px for better hierarchy
+- Plain text styling for description and metadata (removed input box appearance)
+- Header action buttons for edit and delete operations
+- Repositioned complete/undo button to bottom for better thumb reach
+- Removed redundant "Details" section header for cleaner layout
+
+### 4. Advanced Task Form Features
+**Due Date Preservation**: Smart form behavior that preserves user input:
+- When toggling due date off/on, previous date/time selections are remembered
+- Notification settings are maintained during due date changes
+- No data loss during form interactions
+
+**Alarm Integration**: Added dedicated alarm toggle for enhanced notifications:
+- Separate alarm control for sound-based alerts
+- Visual distinction from standard notification reminders
+- Ready for integration with native notification sound settings
+
+**Custom Repeat Patterns**: Interactive weekday selection interface:
+- 7 circular buttons representing each day of the week (M,T,W,T,F,S,S)
+- Multiple day selection for flexible custom repeat schedules
+- Visual feedback with selected state highlighting
+- Seamless integration with existing repeat pattern options
+
+**Optimized Date/Time Layout**: 
+- Combined date and time pickers in single row (50% width each)
+- More efficient use of screen space
+- Improved visual balance and accessibility
+
+**Cleaner Form Design**:
+- Removed field labels (Title, Description, Attachment) while preserving placeholders
+- Reduced visual clutter and improved focus on content
+- More modern, minimal aesthetic
+
+### 5. Native Platform Integration
+**Platform-Specific Icons**: Replaced generic Expo icons with native platform libraries:
+- **Android**: Material Design icons for authentic Android experience
+- **iOS**: SF Symbols-style icons for native iOS feel
+- Automatic platform detection and appropriate icon rendering
+- Better performance through native icon libraries
 
 ---
 
@@ -159,13 +235,15 @@ export interface ThemeColors {
 ## User Interface Design
 
 ### Navigation Architecture
-**Bottom Tab Navigation**:
-- **Todo Tab**: Active tasks with smart sorting and urgent task prioritization
-- **Completed Tab**: Historical completed tasks with completion timestamps
+**Swipeable Tab System**:
+- **Custom SwipeableTabs Component**: Instagram-style horizontal navigation with gesture support
+- **Visual Indicators**: Dot-based current tab indication with smooth transitions
+- **Tab Content**: Todo and Completed screens with preserved state across swipes
+- **Enhanced Tab Bar**: Larger icons positioned at bottom with improved touch targets
 
-**Stack Navigation**: Detailed screens for task creation, editing, and viewing.
+**Stack Navigation**: Detailed screens for task creation, editing, and viewing with enhanced headers.
 
-**Theme Integration**: Navigation components automatically adapt to light/dark themes.
+**Theme Integration**: All navigation components automatically adapt to light/dark themes.
 
 ### Task Display Components
 
@@ -195,26 +273,46 @@ export interface ThemeColors {
 
 ### Task Management Screens
 
-#### TaskFormScreen.tsx - Task Creation/Editing
-**Comprehensive Form Fields**:
-- Title (required text input)
-- Description (optional multiline text)
-- Due Date Picker (optional)
-- Time Picker (optional, enabled when date selected)
-- Notification Offsets (multiple selection with preset options)
-- Repeat Pattern (dropdown selection)
-- File Attachment (camera/document picker integration)
+#### TaskFormScreen.tsx - Advanced Task Creation/Editing
+**Enhanced Form Fields**:
+- Title (required text input with inline validation)
+- Description (optional multiline text with improved styling)
+- Smart Due Date/Time Selection (combined row layout for space efficiency)
+- Alarm Toggle (dedicated control for sound-based notifications)
+- Advanced Notification System (multiple offset selection with visual chips)
+- Custom Repeat Patterns (interactive weekday selection with circular buttons)
+- File Attachment (camera/document picker with enhanced preview)
 
-**Smart Validation**: Form prevents submission without required title.
+**Intelligent Form Behavior**:
+- **Due Date Preservation**: Maintains date/time/notification settings when toggling due date on/off
+- **Smart Validation**: Prevents submission without required fields
+- **Edit Mode**: Pre-populates all fields with proper state management
+- **Clean Label-Free Design**: Removed field labels while maintaining clear placeholders
 
-**Edit Mode**: Pre-populates all fields when editing existing tasks.
+**Custom Repeat Pattern Interface**:
+- Visual weekday selector with 7 circular buttons (M,T,W,T,F,S,S)
+- Multiple day selection for flexible custom schedules
+- Real-time visual feedback with selection highlighting
+- Seamless integration with existing repeat options (None, Daily, Weekly, Monthly)
 
-#### TaskDetailScreen.tsx - Task Information
-**Complete Task Display**: Shows all task metadata in organized sections.
+#### TaskDetailScreen.tsx - Enhanced Task Information Display
+**Improved Visual Hierarchy**: 
+- Larger task titles (28px) for better readability
+- Plain text styling for description and metadata (removed input-like borders)
+- Cleaner metadata presentation without redundant section headers
 
-**Action Buttons**: Completion toggle, edit navigation, and delete confirmation.
+**Header Action Integration**: 
+- Edit and Delete buttons positioned in navigation header
+- Quick access to primary task actions
+- Consistent with platform navigation patterns
 
-**File Viewing**: Displays attached files with system integration for opening.
+**Enhanced Complete/Undo Functionality**:
+- Repositioned action button to bottom of screen for better ergonomics
+- Proper toggle behavior - tasks can be marked complete and then uncompleted
+- State preservation when undoing completion (restores notifications if applicable)
+- Recently completed tasks remain visible in Todo tab for 24 hours
+
+**File Viewing**: Displays attached files with enhanced previews and system integration for opening.
 
 #### Context Menu System
 **TaskContextMenu.tsx**: Modal-based action menu triggered by long-press.
@@ -375,6 +473,44 @@ const filteredTasks = tasks.filter(task =>
 
 ---
 
+## Performance Optimizations & Codebase Cleanup
+
+### Bundle Size Optimization
+**Removed Unused Dependencies (7 packages)**:
+- `@expo/vector-icons` → Replaced with `react-native-vector-icons` for native platform integration
+- `@react-navigation/bottom-tabs` → Removed in favor of custom swipeable navigation
+- `@react-navigation/stack` → Streamlined to only use native stack navigation
+- `@react-native-picker/picker` → Replaced with custom option button components
+- `react-native-gesture-handler` → Removed unused gesture handling library
+- `react-native-reanimated` → Removed unused animation library
+- `expo-linking` → Using React Native's built-in Linking instead
+
+**Package Reduction**: From 837 to 828 packages total (9 packages removed)
+
+### Code Quality Improvements
+**Eliminated Unused Imports**: Systematically removed unused imports from all components:
+- Cleaned up redundant React Native component imports
+- Removed unused utility functions and type definitions
+- Streamlined icon library imports across all files
+
+**Removed Dead Code**: 
+- Eliminated unused state variables and functions
+- Cleaned up duplicate import statements
+- Removed redundant dimension calculations and screen size variables
+
+**Improved Architecture**:
+- Consolidated App.tsx imports and structure
+- Streamlined component prop interfaces
+- Optimized file import paths and organization
+
+### Development Efficiency
+**Faster Build Times**: Reduced dependency tree results in faster compilation
+**Smaller Bundle**: More efficient app size for production builds
+**Cleaner Codebase**: Improved maintainability and developer experience
+**Native Performance**: Platform-specific icons provide better rendering performance
+
+---
+
 ## Performance Optimizations
 
 ### Efficient Rendering
@@ -397,20 +533,29 @@ const filteredTasks = tasks.filter(task =>
 
 ### Development Environment
 ```bash
-# Start development server
-npm start
+# Generate native projects (required for native icons and notifications)
+npx expo prebuild
 
-# Run on Android
+# Start development server with custom build
+npx expo start --dev-client
+
+# Build and run on Android
+cd android && ./gradlew assembleRelease
 npm run android
 
-# Run on iOS  
+# Build and run on iOS  
 npm run ios
 
-# Run on web
+# For web development (limited feature support)
 npm run web
 ```
 
 ### Build Configuration
+**Native Development Build**: App now requires development build for full functionality:
+- Native vector icons (Material Design on Android, SF Symbols-style on iOS)
+- Enhanced notification capabilities beyond Expo Go limitations
+- Better performance through native module integration
+
 **Expo Configuration**: Optimized app.json with proper permissions and capabilities.
 
 **TypeScript**: Strict type checking enabled for code quality.

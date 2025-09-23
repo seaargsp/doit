@@ -1,6 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface FloatingActionButtonProps {
@@ -28,7 +28,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <Ionicons name="add" size={28} color="white" />
+      <MaterialCommunityIcons name="plus" size={28} color="white" />
     </TouchableOpacity>
   );
 };

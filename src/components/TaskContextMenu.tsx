@@ -6,9 +6,9 @@ import {
   StyleSheet,
   Modal,
   Alert,
-  Dimensions,
+  Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface TaskContextMenuProps {
@@ -18,8 +18,6 @@ interface TaskContextMenuProps {
   onDelete: () => void;
   taskTitle: string;
 }
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function TaskContextMenu({
   visible,
@@ -72,7 +70,7 @@ export default function TaskContextMenu({
             onPress={handleEdit}
             activeOpacity={0.7}
           >
-            <Ionicons name="pencil" size={20} color={colors.primary} />
+            <MaterialCommunityIcons name="pencil" size={20} color={colors.primary} />
             <Text style={[styles.menuItemText, styles.editText]}>Edit</Text>
           </TouchableOpacity>
           
@@ -83,7 +81,7 @@ export default function TaskContextMenu({
             onPress={handleDelete}
             activeOpacity={0.7}
           >
-            <Ionicons name="trash" size={20} color={colors.error} />
+            <MaterialCommunityIcons name="delete" size={20} color={colors.error} />
             <Text style={[styles.menuItemText, styles.deleteText]}>Delete</Text>
           </TouchableOpacity>
         </View>

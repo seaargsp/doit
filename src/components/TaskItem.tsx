@@ -5,10 +5,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Task } from '../types/Task';
 import { TaskUtils } from '../utils/TaskUtils';
+import { getIconName, getIconComponent } from '../utils/IconUtils';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface TaskItemProps {
@@ -31,6 +33,8 @@ export default function TaskItem({
   const isOverdue = task.dueDateTime && !isCompleted && TaskUtils.isOverdue(task.dueDateTime);
   const isUpcoming = !isCompleted && TaskUtils.isUpcoming(task);
   const styles = createStyles(colors);
+
+  const IconComponent = getIconComponent();
 
   return (
     <TouchableOpacity
@@ -76,8 +80,8 @@ export default function TaskItem({
         <View style={styles.metaInfo}>
           {task.dueDateTime && (
             <View style={styles.dueDateContainer}>
-              <Ionicons
-                name="time-outline"
+              <IconComponent
+                name={getIconName('time-outline')}
                 size={14}
                 color={isOverdue ? colors.error : colors.textSecondary}
               />
@@ -95,8 +99,8 @@ export default function TaskItem({
 
           {task.repeatPattern !== 'none' && (
             <View style={styles.repeatContainer}>
-              <Ionicons
-                name="repeat-outline"
+              <IconComponent
+                name={getIconName('repeat-outline')}
                 size={14}
                 color={colors.textSecondary}
               />
@@ -108,8 +112,8 @@ export default function TaskItem({
 
           {task.attachedFile && (
             <View style={styles.attachmentContainer}>
-              <Ionicons
-                name={task.attachedFile.type === 'image' ? 'image-outline' : 'document-outline'}
+              <IconComponent
+                name={task.attachedFile.type === 'image' ? getIconName('image-outline') : getIconName('document-outline')}
                 size={14}
                 color={colors.textSecondary}
               />
@@ -121,8 +125,8 @@ export default function TaskItem({
 
           {task.notificationOffsets && task.notificationOffsets.length > 0 && (
             <View style={styles.notificationContainer}>
-              <Ionicons
-                name="notifications-outline"
+              <IconComponent
+                name={getIconName('notifications-outline')}
                 size={14}
                 color={colors.textSecondary}
               />

@@ -5,7 +5,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -27,7 +27,7 @@ export default function SearchHeader({
   return (
     <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
       <View style={styles.searchContainer}>
-        <Ionicons name="search-outline" size={20} color={colors.textMuted} style={styles.searchIcon} />
+        <MaterialCommunityIcons name="magnify" size={20} color={colors.textMuted} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder={placeholder}

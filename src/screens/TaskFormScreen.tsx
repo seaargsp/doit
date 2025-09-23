@@ -12,10 +12,9 @@ import {
   Image,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 
@@ -24,6 +23,7 @@ import { Task, TaskFormData, RepeatPattern, NOTIFICATION_OPTIONS, REPEAT_OPTIONS
 import { StorageService } from '../services/StorageService';
 import { NotificationService } from '../services/NotificationService';
 import { TaskUtils } from '../utils/TaskUtils';
+import { getIconName, getIconComponent } from '../utils/IconUtils';
 import { useTheme } from '../contexts/ThemeContext';
 
 type TaskFormScreenProps = {
@@ -35,6 +35,8 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   const { taskId, mode } = route.params;
   const isEditMode = mode === 'edit';
   const { colors } = useTheme();
+
+  const IconComponent = getIconComponent();
 
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
@@ -288,8 +290,13 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   };
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      <View style={styles.form}>
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.form}>
         {/* Title */}
         <View style={styles.section}>
           <TextInput
@@ -363,7 +370,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
                     : 'Select Date'
                   }
                 </Text>
-                <Ionicons name="calendar-outline" size={20} color="#007AFF" />
+                <IconComponent name={getIconName('calendar-outline')} size={20} color="#007AFF" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -379,7 +386,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
                     : 'Select Time'
                   }
                 </Text>
-                <Ionicons name="time-outline" size={20} color="#007AFF" />
+                <IconComponent name={getIconName('time-outline')} size={20} color="#007AFF" />
               </TouchableOpacity>
             </View>
           </View>
@@ -432,22 +439,29 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
         {/* Repeat Pattern */}
         <View style={styles.section}>
           <Text style={styles.label}>Repeat</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={formData.repeatPattern}
-              onValueChange={(value: RepeatPattern) =>
-                setFormData({ ...formData, repeatPattern: value })
-              }
-              style={styles.picker}
-            >
-              {REPEAT_OPTIONS.map((option) => (
-                <Picker.Item
+          <View style={styles.repeatGrid}>
+            {REPEAT_OPTIONS.map((option) => {
+              const isSelected = formData.repeatPattern === option.value;
+              return (
+                <TouchableOpacity
                   key={option.value}
-                  label={option.label}
-                  value={option.value}
-                />
-              ))}
-            </Picker>
+                  style={[
+                    styles.repeatChip,
+                    isSelected && styles.repeatChipSelected,
+                  ]}
+                  onPress={() => setFormData({ ...formData, repeatPattern: option.value })}
+                >
+                  <Text
+                    style={[
+                      styles.repeatChipText,
+                      isSelected && styles.repeatChipTextSelected,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -510,7 +524,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
                 </View>
               ) : (
                 <View style={styles.documentContainer}>
-                  <Ionicons name="document-outline" size={40} color={colors.primary} />
+                  <IconComponent name={getIconName('document-outline')} size={40} color={colors.primary} />
                   <View style={styles.attachmentInfo}>
                     <Text style={styles.attachmentName} numberOfLines={1}>
                       {formData.attachedFile.name}
@@ -525,7 +539,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
                 style={styles.removeButton}
                 onPress={removeAttachment}
               >
-                <Ionicons name="close-circle" size={24} color={colors.error} />
+                <IconComponent name={getIconName('close-circle')} size={24} color={colors.error} />
               </TouchableOpacity>
             </View>
           ) : (
@@ -533,30 +547,10 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
               style={styles.attachButton}
               onPress={showAttachmentOptions}
             >
-              <Ionicons name="attach-outline" size={24} color={colors.primary} />
+              <IconComponent name={getIconName('attach-outline')} size={24} color={colors.primary} />
               <Text style={styles.attachButtonText}>Add attachment</Text>
             </TouchableOpacity>
           )}
-        </View>
-
-        {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, styles.cancelButton]}
-            onPress={handleCancel}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.saveButton]}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            <Text style={styles.saveButtonText}>
-              {loading ? 'Saving...' : 'Save'}
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -579,7 +573,28 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
           onChange={handleTimeChange}
         />
       )}
-    </ScrollView>
+      </ScrollView>
+
+      {/* Sticky Buttons */}
+      <View style={styles.stickyButtonContainer}>
+        <TouchableOpacity
+          style={[styles.button, styles.cancelButton]}
+          onPress={handleCancel}
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.saveButton]}
+          onPress={handleSave}
+          disabled={loading}
+        >
+          <Text style={styles.saveButtonText}>
+            {loading ? 'Saving...' : 'Save'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
@@ -588,8 +603,34 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for sticky buttons
+  },
   form: {
     padding: 16,
+  },
+  stickyButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
   },
   section: {
     marginBottom: 24,
@@ -800,6 +841,31 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.text,
   },
   weekdayTextSelected: {
+    color: 'white',
+  },
+  repeatGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  repeatChip: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  repeatChipSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  repeatChipText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  repeatChipTextSelected: {
     color: 'white',
   },
 });

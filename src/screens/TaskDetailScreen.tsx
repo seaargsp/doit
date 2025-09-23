@@ -9,17 +9,18 @@ import {
   Linking,
   Image,
   Modal,
-  Dimensions,
+  Platform,
 } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { RootStackParamList } from '../types/Navigation';
 import { Task, NOTIFICATION_OPTIONS } from '../types/Task';
 import { StorageService } from '../services/StorageService';
 import { NotificationService } from '../services/NotificationService';
 import { TaskUtils } from '../utils/TaskUtils';
+import { getIconName, getIconComponent } from '../utils/IconUtils';
 import { useTheme } from '../contexts/ThemeContext';
 
 type TaskDetailScreenProps = {
@@ -35,6 +36,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
   const [imageModalVisible, setImageModalVisible] = useState(false);
 
   const styles = createStyles(colors);
+  const IconComponent = getIconComponent();
 
   useEffect(() => {
     loadTask();
@@ -50,10 +52,10 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
               onPress={handleEdit}
               style={{ marginRight: 15 }}
             >
-              <Ionicons name="pencil" size={24} color={colors.text} />
+              <IconComponent name={getIconName('pencil')} size={24} color={colors.text} />
             </TouchableOpacity>
             <TouchableOpacity onPress={handleDelete}>
-              <Ionicons name="trash" size={24} color={colors.error} />
+              <IconComponent name={getIconName('trash')} size={24} color={colors.error} />
             </TouchableOpacity>
           </View>
         ),
@@ -77,25 +79,44 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
     if (!task) return;
 
     try {
-      const updatedTask: Task = {
-        ...task,
-        completedAt: new Date().toISOString(),
-      };
-
-      // Handle repeat pattern
-      if (task.repeatPattern !== 'none') {
-        const repeatingTask = TaskUtils.createRepeatingTask(task);
-        await StorageService.addTask(repeatingTask);
-        await NotificationService.scheduleTaskNotifications(repeatingTask);
-      }
-
-      // Cancel notifications for completed task
-      await NotificationService.handleTaskCompletion(task.id, true);
-      await StorageService.updateTask(updatedTask);
+      const isCompleted = !!task.completedAt;
       
-      navigation.goBack();
+      if (isCompleted) {
+        // Undo completion
+        const updatedTask: Task = {
+          ...task,
+          completedAt: undefined,
+        };
+
+        // Reschedule notifications if task has due date
+        if (task.dueDateTime) {
+          await NotificationService.scheduleTaskNotifications(updatedTask);
+        }
+
+        await StorageService.updateTask(updatedTask);
+        setTask(updatedTask);
+      } else {
+        // Complete task
+        const updatedTask: Task = {
+          ...task,
+          completedAt: new Date().toISOString(),
+        };
+
+        // Handle repeat pattern
+        if (task.repeatPattern !== 'none') {
+          const repeatingTask = TaskUtils.createRepeatingTask(task);
+          await StorageService.addTask(repeatingTask);
+          await NotificationService.scheduleTaskNotifications(repeatingTask);
+        }
+
+        // Cancel notifications for completed task
+        await NotificationService.handleTaskCompletion(task.id, true);
+        await StorageService.updateTask(updatedTask);
+        
+        navigation.goBack();
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to complete task');
+      Alert.alert('Error', 'Failed to update task');
     }
   };
 
@@ -179,7 +200,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
             const option = NOTIFICATION_OPTIONS.find(opt => opt.value === offset);
             return (
               <View key={offset} style={styles.notificationItem}>
-                <Ionicons name="notifications-outline" size={16} color="#666" />
+                <IconComponent name={getIconName('notifications-outline')} size={16} color="#666" />
                 <Text style={styles.notificationText}>
                   {option ? option.label : `${offset} minutes`} before
                 </Text>
@@ -212,12 +233,12 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
               resizeMode="cover"
             />
             <View style={styles.imageOverlay}>
-              <Ionicons name="expand-outline" size={24} color="#fff" />
+              <IconComponent name={getIconName('expand-outline')} size={24} color="#fff" />
             </View>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.documentContainer}>
-            <Ionicons name="document-outline" size={40} color={colors.primary} />
+            <IconComponent name={getIconName('document-outline')} size={40} color={colors.primary} />
             <View style={styles.attachmentInfo}>
               <Text style={styles.attachmentName} numberOfLines={2}>
                 {attachedFile.name}
@@ -261,7 +282,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
           </Text>
           {isCompleted && (
             <View style={styles.completedBadge}>
-              <Ionicons name="checkmark-circle" size={24} color="#34C759" />
+              <IconComponent name={getIconName('checkmark-circle')} size={24} color="#34C759" />
             </View>
           )}
         </View>
@@ -274,8 +295,8 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Due Date</Text>
             <View style={styles.dueDateContainer}>
-              <Ionicons
-                name="time-outline"
+              <IconComponent
+                name={getIconName('time-outline')}
                 size={20}
                 color={isOverdue ? '#FF3B30' : '#666'}
               />
@@ -296,7 +317,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Repeat</Text>
             <View style={styles.repeatContainer}>
-              <Ionicons name="repeat-outline" size={20} color="#666" />
+              <IconComponent name={getIconName('repeat-outline')} size={20} color="#666" />
               <Text style={styles.repeatText}>
                 {task.repeatPattern.charAt(0).toUpperCase() + task.repeatPattern.slice(1)}
               </Text>
@@ -312,7 +333,6 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
 
         {/* Metadata */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Details</Text>
           <Text style={styles.metadataText}>
             Created: {TaskUtils.formatDueDate(task.createdAt)}
           </Text>
@@ -331,7 +351,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
             style={styles.completeButton}
             onPress={handleMarkComplete}
           >
-            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+            <IconComponent name={getIconName('checkmark-circle-outline')} size={20} color="#fff" />
             <Text style={styles.completeButtonText}>Complete Task</Text>
           </TouchableOpacity>
         ) : (
@@ -339,7 +359,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
             style={styles.undoButton}
             onPress={handleMarkComplete}
           >
-            <Ionicons name="arrow-undo-outline" size={20} color="#fff" />
+            <IconComponent name={getIconName('arrow-undo-outline')} size={20} color="#fff" />
             <Text style={styles.undoButtonText}>Undo Completed</Text>
           </TouchableOpacity>
         )}
@@ -362,7 +382,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
                 style={styles.closeButton}
                 onPress={() => setImageModalVisible(false)}
               >
-                <Ionicons name="close" size={30} color="#fff" />
+                <IconComponent name="close" size={30} color="#fff" />
               </TouchableOpacity>
               {task?.attachedFile?.type === 'image' && (
                 <Image

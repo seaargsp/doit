@@ -8,6 +8,7 @@ import { FloatingActionButton } from '../components/FloatingActionButton';
 import TodoScreen from './TodoScreen';
 import CompletedScreen from './CompletedScreen';
 import { RootStackParamList } from '../types/Navigation';
+import { getIconName } from '../utils/IconUtils';
 
 type MainScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,7 +27,7 @@ export default function MainScreen() {
     <View style={styles.container}>
       <SwipeableTabs
         tabNames={['To-Do', 'Completed']}
-        tabIcons={['hourglass-outline', 'checkmark-done-outline']}
+        tabIcons={[getIconName('checkbox-multiple-blank-circle'), getIconName('checkbox-multiple-marked-circle')]}
         onTabChange={setCurrentTab}
       >
         <TodoScreen />

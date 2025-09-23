@@ -6,9 +6,11 @@ import {
   TouchableOpacity,
   Text,
   ScrollView,
+  Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../contexts/ThemeContext';
+import { getIconComponent } from '../utils/IconUtils';
 
 interface SwipeableTabsProps {
   children: React.ReactNode[];
@@ -30,6 +32,8 @@ export const SwipeableTabs: React.FC<SwipeableTabsProps> = ({
   const { colors } = useTheme();
   const [currentTab, setCurrentTab] = useState(initialTab);
   const scrollViewRef = React.useRef<ScrollView>(null);
+
+  const IconComponent = getIconComponent();
 
   const switchToTab = (index: number) => {
     if (index === currentTab) return;
@@ -96,7 +100,7 @@ export const SwipeableTabs: React.FC<SwipeableTabsProps> = ({
               style={styles.tab}
               onPress={() => switchToTab(index)}
             >
-              <Ionicons
+              <IconComponent
                 name={tabIcons[index] as any}
                 size={28}
                 color={index === currentTab ? colors.primary : colors.textMuted}

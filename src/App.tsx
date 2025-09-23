@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import React from 'react';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootStackParamList } from './types/Navigation';
-import { Task } from './types/Task';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 
 // Import components

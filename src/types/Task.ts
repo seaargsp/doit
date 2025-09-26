@@ -13,6 +13,7 @@ export interface Task {
   description?: string;
   dueDateTime?: string; // ISO 8601
   notificationOffsets?: number[]; // minutes before due date
+  hasAlarm?: boolean; // Alarm toggle for sound-based alerts
   repeatPattern: RepeatPattern;
   customDays?: number[]; // Days of week for custom repeat (0=Monday, 6=Sunday)
   createdAt: string; // ISO 8601
@@ -26,6 +27,7 @@ export interface TaskFormData {
   dueDate?: Date;
   dueTime?: Date;
   notificationOffsets: number[];
+  hasAlarm?: boolean;
   repeatPattern: RepeatPattern;
   attachedFile?: AttachedFile;
 }

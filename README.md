@@ -34,6 +34,7 @@ interface Task {
   description?: string;          // Optional with URL support
   dueDateTime?: string;          // ISO 8601
   notificationOffsets?: number[]; // Minutes before due
+  hasAlarm?: boolean;            // Audible alarm at notification times
   repeatPattern: "none" | "daily" | "weekly" | "monthly" | "custom";
   customDays?: number[];         // For custom weekly patterns (0-6)
   createdAt: string;            // ISO 8601
@@ -65,6 +66,14 @@ interface Task {
 - Multiple reminder offsets per task
 - Smart scheduling (skip past times)
 - Cancel notifications on task completion/deletion
+- **Audible Alarm System**: High-priority alarm notifications that work alongside regular reminders
+
+### **Alarm System**
+- **Dual Alert System**: Regular notifications + audible alarms at the same times
+- **Flexible Timing**: Alarms sound at notification times, or at due time if no notifications set
+- **High Priority**: Enhanced notification priority with forced sound and visual prominence
+- **Clock App Style**: Persistent, audible alerts similar to phone alarm apps
+- **Smart Scheduling**: Automatic alarm cancellation when tasks are completed or deleted
 
 ### **Repeat Patterns**
 - Standard patterns: daily, weekly, monthly
@@ -75,7 +84,9 @@ interface Task {
 ### **Form Features**
 - Enhanced task creation/editing with sticky bottom buttons
 - Due date/time preservation when toggling features
-- Alarm toggle functionality
+- **Alarm Toggle Functionality**: Enables audible alarms at notification times
+- **Smart Alarm Scheduling**: Alarms at notification times or due time if no notifications
+- **Visual Feedback**: Clear descriptions of when alarms will sound
 - Custom repeat pattern UI with weekday circles
 - Safe area adaptive button positioning
 
@@ -112,6 +123,8 @@ interface Task {
 5. **Attach File**: Form → Add attachment → Modal picker → Select → Preview
 6. **Set Reminders**: Form → Notifications → Multiple offsets → Local scheduling
 7. **Custom Repeat**: Form → Repeat → Custom → Weekday selection → Auto-generation
+8. **Set Alarms**: Form → Enable Due Date → Toggle Alarm → Select notification times → High-priority alarms scheduled
+9. **Alarm-Only Tasks**: Form → Enable Due Date → Toggle Alarm → No notification times → Alarm at due time
 
 ## **Platform Considerations**
 - Android navigation button vs gesture navigation adaptation
@@ -173,8 +186,10 @@ interface Task {
 - No data loss during form interactions
 
 **Alarm Integration**: Added dedicated alarm toggle for enhanced notifications:
-- Separate alarm control for sound-based alerts
-- Visual distinction from standard notification reminders
+- Separate alarm control for audible alerts that work alongside regular notifications
+- Creates alarm-style notifications at the same times as regular notification reminders
+- If no notification times are selected, alarm sounds at the due time
+- High-priority notifications with enhanced sound and visual prominence
 - Ready for integration with native notification sound settings
 
 **Custom Repeat Patterns**: Interactive weekday selection interface:
@@ -242,12 +257,31 @@ interface Task {
 
 **Temporal Logic**: The urgency calculation uses `TaskUtils.isUpcoming()` method that considers current time vs due time.
 
-### 5. Enhanced Notification System
+### 5. Enhanced Notification & Alarm System
+**Dual Alert Architecture**: Comprehensive alerting system with both gentle reminders and urgent alarms:
+
+**Regular Notifications**:
+- Gentle reminder-style notifications
+- Multiple offset times (5 minutes to 1 week before due)
+- Standard notification priority and sound
+- Dismissible and non-intrusive
+
+**Audible Alarm System**:
+- High-priority alarm notifications with enhanced sound
+- Clock app-style persistent alerts
+- Maximum Android notification priority
+- Forced sound and visual prominence
+- "🚨 TASK ALARM" title with urgent messaging
+
+**Smart Scheduling Logic**:
+- **With Notification Times**: Alarms sound at ALL selected notification times
+- **Without Notification Times**: Single alarm at due time
+- **Automatic Cleanup**: Alarms cancelled when tasks completed/deleted
+- **Recurring Tasks**: Alarm settings preserved in repeated tasks
+
 **Expo Go Compatibility**: Graceful degradation for notification limitations in Expo Go environment.
 
-**Multiple Reminders**: Support for multiple notification offsets (minutes before due date).
-
-**Smart Scheduling**: Prevents scheduling notifications for past due dates.
+**Cross-Platform Support**: Enhanced notification behavior works on both Android and iOS.
 
 
 ---
@@ -283,6 +317,12 @@ interface Task {
 - Completed tasks: Strikethrough text + muted colors
 - Overdue tasks: Red border accent
 - Urgent tasks: Warning color text + warning icon
+- **Alarm-enabled tasks**: Filled bell icon (🔔) with primary color highlighting
+
+**Notification & Alarm Indicators**:
+- **Regular Notifications**: Outline bell icon for tasks with notification offsets
+- **Alarm Enabled**: Filled bell icon with primary color for tasks with alarms
+- **Dual Display**: Both icons shown when task has both notifications and alarms
 
 #### SearchHeader.tsx - Global Search
 **Real-time Filtering**: Instant search across task titles and descriptions.
@@ -298,16 +338,24 @@ interface Task {
 - Title (required text input with inline validation)
 - Description (optional multiline text with improved styling)
 - Smart Due Date/Time Selection (combined row layout for space efficiency)
-- Alarm Toggle (dedicated control for sound-based notifications)
+- **Alarm Toggle**: Dedicated control for audible alerts with contextual feedback
+- **Alarm Descriptions**: Dynamic help text explaining when alarms will sound
 - Advanced Notification System (multiple offset selection with visual chips)
 - Custom Repeat Patterns (interactive weekday selection with circular buttons)
 - File Attachment (camera/document picker with enhanced preview)
 
 **Intelligent Form Behavior**:
-- **Due Date Preservation**: Maintains date/time/notification settings when toggling due date on/off
+- **Due Date Preservation**: Maintains date/time/notification/alarm settings when toggling due date on/off
+- **Alarm State Management**: Preserves alarm preference during form interactions
 - **Smart Validation**: Prevents submission without required fields
-- **Edit Mode**: Pre-populates all fields with proper state management
+- **Edit Mode**: Pre-populates all fields including alarm state with proper state management
 - **Clean Label-Free Design**: Removed field labels while maintaining clear placeholders
+
+**Alarm-Specific Features**:
+- **Contextual Help**: "🔊 Audible alarm will sound at notification times" when alarm enabled
+- **Warning Messages**: "⚠️ Alarm will sound at due time" when no notification times selected
+- **State Preservation**: Alarm setting maintained when toggling due date on/off
+- **Visual Feedback**: Immediate confirmation of alarm settings
 
 **Custom Repeat Pattern Interface**:
 - Visual weekday selector with 7 circular buttons (M,T,W,T,F,S,S)
@@ -329,8 +377,16 @@ interface Task {
 **Enhanced Complete/Undo Functionality**:
 - Repositioned action button to bottom of screen for better ergonomics
 - Proper toggle behavior - tasks can be marked complete and then uncompleted
-- State preservation when undoing completion (restores notifications if applicable)
+- State preservation when undoing completion (restores notifications and alarms if applicable)
 - Recently completed tasks remain visible in Todo tab for 24 hours
+
+**Alarm Display Features**:
+- **Prominent Alarm Chip**: "🔊 Audible Alarm" chip with blue background and white text
+- **Contextual Descriptions**: 
+  - "Alarm will sound at due time" for alarm-only tasks
+  - "Alarm will sound at notification times" for tasks with both alarms and notifications
+- **Visual Hierarchy**: Alarm information prominently displayed in notifications section
+- **Integration**: Alarm status shown even when no regular notifications are set
 
 **File Viewing**: Displays attached files with enhanced previews and system integration for opening.
 
@@ -369,8 +425,10 @@ interface Task {
 ### Repeat Pattern Logic
 **Automatic Generation**: When completing a recurring task, automatically creates a new instance with:
 - Updated due date based on repeat interval
-- Same title, description, notifications, and repeat pattern
+- Same title, description, notifications, alarms, and repeat pattern
 - New unique ID and creation timestamp
+- **Alarm Preservation**: hasAlarm setting maintained in recurring tasks
+- **Complete Data Migration**: All task properties including customDays and attachedFile preserved
 - Preserves task completion history
 
 ---
@@ -397,21 +455,37 @@ interface Task {
 
 ---
 
-## Notification System
+## Notification & Alarm System
 
 ### NotificationService.ts Architecture
-**Local Notifications Only**: No remote push notifications required.
+**Dual Notification System**: Both regular notifications and alarm notifications.
 
-**Scheduling Logic**:
+**Regular Notification Scheduling**:
 ```typescript
 // For each task with dueDateTime + notificationOffsets:
 const notificationTime = dueDateTime - offset;
 if (notificationTime > currentTime) {
-  scheduleNotification(notificationTime, taskTitle);
+  scheduleNotification(notificationTime, taskTitle, 'reminder');
 }
 ```
 
-**Cleanup Management**: Automatically cancels notifications when:
+**Alarm Notification Scheduling**:
+```typescript
+// For tasks with hasAlarm enabled:
+const alarmTime = dueDateTime - offset; // or dueDateTime if no offsets
+if (alarmTime > currentTime) {
+  scheduleAlarmNotification(alarmTime, taskTitle, 'alarm');
+}
+```
+
+**Alarm Enhancement Features**:
+- High priority notifications (`AndroidNotificationPriority.MAX`)
+- Forced sound and visual alerts
+- Enhanced notification titles ("🚨 TASK ALARM")
+- Urgent messaging for immediate attention
+- Badge notifications for alarms
+
+**Cleanup Management**: Automatically cancels both regular notifications and alarms when:
 - Task is deleted
 - Task is completed
 - Task due date/notifications are modified
@@ -484,6 +558,13 @@ const filteredTasks = tasks.filter(task =>
 2. Sorted to top of Todo list for visibility
 3. Warning text color draws attention
 4. Upon completion → Reverts to original category icon
+
+### Alarm User Experience
+1. **Enable Alarm with Notifications**: Due Date ON → Alarm Toggle ON → Select notification times → Both gentle reminders AND alarms fire
+2. **Alarm-Only Mode**: Due Date ON → Alarm Toggle ON → No notification times → Single alarm at due time
+3. **Alarm Feedback**: Visual confirmation with "🔊 Audible alarm will sound at notification times" message
+4. **Alarm Indicators**: Tasks with alarms show filled bell icon (🔔) in task lists
+5. **Detail View**: Prominent "🔊 Audible Alarm" chip with context descriptions
 
 ### Theme Management
 1. App automatically detects system preference on launch

@@ -167,7 +167,10 @@ export class TaskUtils {
       description: completedTask.description,
       dueDateTime: nextDueDate?.toISOString(),
       notificationOffsets: completedTask.notificationOffsets,
+      hasAlarm: completedTask.hasAlarm,
       repeatPattern: completedTask.repeatPattern,
+      customDays: completedTask.customDays,
+      attachedFile: completedTask.attachedFile,
       createdAt: new Date().toISOString(),
       // completedAt is undefined for new task
     };

@@ -187,7 +187,10 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
   };
 
   const renderNotifications = () => {
-    if (!task?.notificationOffsets || task.notificationOffsets.length === 0) {
+    const hasNotifications = task?.notificationOffsets && task.notificationOffsets.length > 0;
+    const hasAlarm = task?.hasAlarm;
+    
+    if (!hasNotifications && !hasAlarm) {
       return null;
     }
 
@@ -195,7 +198,25 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Notifications</Text>
         <View style={styles.notificationChipsContainer}>
-          {task.notificationOffsets.map((offset) => {
+          {hasAlarm && (
+            <View style={[styles.notificationChip, styles.alarmChip]}>
+              <IconComponent name={getIconName('notifications')} size={14} color="white" />
+              <Text style={[styles.notificationChipText, styles.alarmChipText]}>
+                🔊 Audible Alarm
+              </Text>
+            </View>
+          )}
+          {hasAlarm && !hasNotifications && (
+            <Text style={styles.alarmOnlyDescription}>
+              Alarm will sound at due time
+            </Text>
+          )}
+          {hasAlarm && hasNotifications && (
+            <Text style={styles.alarmWithNotificationsDescription}>
+              Alarm will sound at notification times
+            </Text>
+          )}
+          {hasNotifications && task.notificationOffsets!.map((offset) => {
             const option = NOTIFICATION_OPTIONS.find(opt => opt.value === offset);
             return (
               <View key={offset} style={styles.notificationChip}>
@@ -779,8 +800,31 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  alarmChip: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   notificationChipText: {
     fontSize: 14,
     color: colors.text,
+  },
+  alarmChipText: {
+    color: 'white',
+    fontWeight: '500',
+  },
+  alarmOnlyDescription: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  alarmWithNotificationsDescription: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
 });

@@ -7,13 +7,21 @@ let isNotificationSupported = true;
 // Configure notification behavior
 try {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
+    handleNotification: async (notification) => {
+      const isAlarm = notification.request.content.data?.isAlarm === true;
+      
+      return {
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: isAlarm, // Set badge for alarms
+        shouldShowBanner: true,
+        shouldShowList: true,
+        // Enhanced settings for alarm notifications
+        ...(isAlarm && {
+          priority: Notifications.AndroidNotificationPriority.MAX,
+        }),
+      };
+    },
   });
 } catch (error) {
   console.warn('Notifications not fully supported in this environment:', error);
@@ -55,6 +63,12 @@ export class NotificationService {
       return;
     }
 
+    // Handle alarm-only tasks (hasAlarm but no notification offsets)
+    if (task.hasAlarm && task.dueDateTime && (!task.notificationOffsets || task.notificationOffsets.length === 0)) {
+      await this.scheduleAlarmNotification(task, 0); // Alarm at due time
+      return;
+    }
+
     if (!task.dueDateTime || !task.notificationOffsets || task.notificationOffsets.length === 0) {
       return;
     }
@@ -77,14 +91,14 @@ export class NotificationService {
           continue;
         }
 
+        // Schedule regular notification
         const identifier = `${task.id}_${offsetMinutes}`;
-        
         await Notifications.scheduleNotificationAsync({
           identifier,
           content: {
             title: 'Task Reminder',
             body: `"${task.title}" is due in ${this.formatOffset(offsetMinutes)}`,
-            data: { taskId: task.id },
+            data: { taskId: task.id, type: 'reminder' },
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -92,10 +106,56 @@ export class NotificationService {
             repeats: false,
           },
         });
+
+        // Schedule alarm notification if hasAlarm is enabled
+        if (task.hasAlarm) {
+          await this.scheduleAlarmNotification(task, offsetMinutes);
+        }
       }
     } catch (error) {
       console.error('Error scheduling notifications:', error);
       throw new Error('Notification could not be scheduled');
+    }
+  }
+
+  /**
+   * Schedule an alarm-style notification with enhanced sound and persistence
+   */
+  private static async scheduleAlarmNotification(task: Task, offsetMinutes: number): Promise<void> {
+    if (!task.dueDateTime) return;
+
+    const dueDate = new Date(task.dueDateTime);
+    const now = new Date();
+    const notificationTime = new Date(dueDate.getTime() - offsetMinutes * 60 * 1000);
+    
+    // Don't schedule alarms for past times
+    if (notificationTime <= now) {
+      return;
+    }
+
+    const alarmIdentifier = `${task.id}_alarm_${offsetMinutes}`;
+    
+    try {
+      await Notifications.scheduleNotificationAsync({
+        identifier: alarmIdentifier,
+        content: {
+          title: '${task.title}',
+          body: offsetMinutes === 0 
+            ? `"${task.title}" is due now` 
+            : `"${task.title}" alarm - due in ${this.formatOffset(offsetMinutes)}`,
+          data: { taskId: task.id, type: 'alarm', isAlarm: true },
+          sound: true, // Force sound
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+          sticky: false,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: Math.floor((notificationTime.getTime() - now.getTime()) / 1000),
+          repeats: false,
+        },
+      });
+    } catch (error) {
+      console.error('Error scheduling alarm notification:', error);
     }
   }
 

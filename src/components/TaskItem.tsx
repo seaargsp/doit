@@ -132,6 +132,16 @@ export default function TaskItem({
               />
             </View>
           )}
+
+          {task.hasAlarm && (
+            <View style={styles.alarmContainer}>
+              <IconComponent
+                name={getIconName('notifications')}
+                size={14}
+                color={colors.primary}
+              />
+            </View>
+          )}
         </View>
 
         {showCompleted && task.completedAt && (
@@ -238,6 +248,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.warning,
   },
   notificationContainer: {
+    marginRight: 12,
+    marginBottom: 4,
+  },
+  alarmContainer: {
     marginRight: 12,
     marginBottom: 4,
   },

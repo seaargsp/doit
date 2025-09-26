@@ -47,6 +47,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
     dueDate: undefined,
     dueTime: undefined,
     notificationOffsets: [],
+    hasAlarm: false,
     repeatPattern: 'none',
     attachedFile: undefined,
   });
@@ -61,6 +62,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   const [preservedDueDate, setPreservedDueDate] = useState<Date | undefined>();
   const [preservedDueTime, setPreservedDueTime] = useState<Date | undefined>();
   const [preservedNotifications, setPreservedNotifications] = useState<number[]>([]);
+  const [preservedAlarm, setPreservedAlarm] = useState<boolean>(false);
   
   // Alarm feature
   const [hasAlarm, setHasAlarm] = useState(false);
@@ -89,10 +91,12 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
           dueDate: dueDateTime,
           dueTime: dueDateTime,
           notificationOffsets: task.notificationOffsets || [],
+          hasAlarm: task.hasAlarm || false,
           repeatPattern: task.repeatPattern,
           attachedFile: task.attachedFile,
         });
         setHasDueDate(!!task.dueDateTime);
+        setHasAlarm(task.hasAlarm || false);
         if (task.repeatPattern === 'custom' && task.customDays) {
           setCustomDays(task.customDays);
         }
@@ -127,6 +131,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
         description: formData.description.trim() || undefined,
         dueDateTime,
         notificationOffsets: formData.notificationOffsets.length > 0 ? formData.notificationOffsets : undefined,
+        hasAlarm: hasAlarm,
         repeatPattern: formData.repeatPattern,
         customDays: formData.repeatPattern === 'custom' ? customDays : undefined,
         attachedFile: formData.attachedFile,
@@ -342,13 +347,16 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
                   setPreservedDueDate(formData.dueDate);
                   setPreservedDueTime(formData.dueTime);
                   setPreservedNotifications(formData.notificationOffsets);
+                  setPreservedAlarm(hasAlarm);
                   
                   setFormData({
                     ...formData,
                     dueDate: undefined,
                     dueTime: undefined,
                     notificationOffsets: [],
+                    hasAlarm: false,
                   });
+                  setHasAlarm(false);
                 } else {
                   // Restore preserved values when turning back on
                   setFormData({
@@ -356,7 +364,9 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
                     dueDate: preservedDueDate,
                     dueTime: preservedDueTime,
                     notificationOffsets: preservedNotifications,
+                    hasAlarm: preservedAlarm,
                   });
+                  setHasAlarm(preservedAlarm);
                 }
               }}
             />
@@ -409,9 +419,22 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
                 <Text style={styles.switchLabel}>Alarm</Text>
                 <Switch
                   value={hasAlarm}
-                  onValueChange={setHasAlarm}
+                  onValueChange={(value) => {
+                    setHasAlarm(value);
+                    setFormData({ ...formData, hasAlarm: value });
+                  }}
                 />
               </View>
+              {hasAlarm && formData.notificationOffsets.length > 0 && (
+                <Text style={styles.alarmDescription}>
+                  🔊 Audible alarm will sound at notification times
+                </Text>
+              )}
+              {hasAlarm && formData.notificationOffsets.length === 0 && (
+                <Text style={styles.alarmDescription}>
+                  🔊 Audible alarm will sound at due time
+                </Text>
+              )}
             </View>
 
             <View style={styles.section}>
@@ -767,6 +790,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: colors.text,
+  },
+  alarmDescription: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   dateButton: {
     backgroundColor: '#fff',

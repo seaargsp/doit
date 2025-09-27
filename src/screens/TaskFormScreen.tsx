@@ -12,13 +12,15 @@ import {
   Image,
   Modal,
   Pressable,
+  Linking,
+  PermissionsAndroid,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
+import { launchCamera, launchImageLibrary, ImagePickerResponse, MediaType } from 'react-native-image-picker';
+// Document picker temporarily disabled during migration
 
 import { RootStackParamList } from '../types/Navigation';
 import { Task, TaskFormData, RepeatPattern, NOTIFICATION_OPTIONS, REPEAT_OPTIONS, AttachedFile } from '../types/Task';
@@ -191,30 +193,47 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
   const pickImage = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Please grant camera roll permissions to attach images.');
-        return;
+      // Request gallery permissions for Android
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+          {
+            title: 'Gallery Permission',
+            message: 'This app needs access to your gallery to select photos.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert('Permission needed', 'Please grant gallery permissions to attach images.');
+          return;
+        }
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-        base64: false,
-        exif: false,
+      const options = {
+        mediaType: 'photo' as MediaType,
+        quality: 0.8 as const,
+        includeBase64: false,
+        selectionLimit: 1,
+      };
+
+      launchImageLibrary(options, (response: ImagePickerResponse) => {
+        if (response.didCancel || response.errorMessage) {
+          return;
+        }
+
+        if (response.assets && response.assets[0]) {
+          const asset = response.assets[0];
+          const attachedFile: AttachedFile = {
+            uri: asset.uri!,
+            type: 'image',
+            name: asset.fileName || `image_${Date.now()}.jpg`,
+            size: asset.fileSize || 0,
+          };
+          setFormData({ ...formData, attachedFile });
+        }
       });
-
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        const attachedFile: AttachedFile = {
-          uri: asset.uri,
-          type: 'image',
-          name: asset.fileName || `image_${Date.now()}.jpg`,
-          size: asset.fileSize,
-        };
-        setFormData({ ...formData, attachedFile });
-      }
     } catch (error) {
       Alert.alert('Error', 'Failed to pick image');
     }
@@ -222,66 +241,71 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
   const takePhoto = async () => {
     try {
-      // Check if camera is available
-      const cameraAvailable = await ImagePicker.getCameraPermissionsAsync();
-
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permission needed', 
-          'Camera access is required to take photos. Please grant camera permissions in your device settings.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Settings', onPress: () => {} }
-          ]
+      // Request camera permissions for Android
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'Camera Permission',
+            message: 'This app needs access to your camera to take photos.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
         );
-        return;
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert(
+            'Permission needed', 
+            'Camera access is required to take photos. Please grant camera permissions in your device settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Settings', onPress: () => Linking.openSettings() }
+            ]
+          );
+          return;
+        }
       }
 
-      // Add timeout to detect camera launch issues on real devices
-      const cameraPromise = ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-        base64: false, // Explicitly disable base64 for better performance on real devices
-        exif: false, // Disable EXIF data for privacy and performance
-      });
-
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Camera launch timeout - this may be a device-specific issue')), 30000)
-      );
-
-      const result = await Promise.race([cameraPromise, timeoutPromise]) as ImagePicker.ImagePickerResult;
-
-      if (result.canceled) {
-        return;
-      }
-
-      if (!result.assets || result.assets.length === 0) {
-        Alert.alert('Error', 'No photo was captured. Please try again.');
-        return;
-      }
-
-      if (!result.assets[0]) {
-        Alert.alert('Error', 'Photo capture failed. Please try again.');
-        return;
-      }
-
-      const asset = result.assets[0];
-
-      if (!asset.uri) {
-        Alert.alert('Error', 'Photo could not be saved. Please try again.');
-        return;
-      }
-
-      const attachedFile: AttachedFile = {
-        uri: asset.uri,
-        type: 'image',
-        name: asset.fileName || `photo_${Date.now()}.jpg`,
-        size: asset.fileSize,
+      const options = {
+        mediaType: 'photo' as MediaType,
+        quality: 0.8 as const,
+        includeBase64: false,
+        maxWidth: 2000,
+        maxHeight: 2000,
       };
-      setFormData({ ...formData, attachedFile });
+
+      launchCamera(options, (response: ImagePickerResponse) => {
+        if (response.didCancel) {
+          return;
+        }
+
+        if (response.errorMessage) {
+          if (response.errorMessage.includes('timeout')) {
+            Alert.alert(
+              'Camera Timeout', 
+              'The camera is taking longer than usual to open. This may be a device-specific issue.\n\nTips:\n• Try waiting a moment and tapping again\n• Lock and unlock your device\n• Close other apps using the camera\n• Restart the app if the issue persists',
+              [
+                { text: 'Try Again', onPress: () => takePhoto() },
+                { text: 'Cancel', style: 'cancel' }
+              ]
+            );
+          } else {
+            Alert.alert('Error', `Failed to take photo: ${response.errorMessage}`);
+          }
+          return;
+        }
+
+        if (response.assets && response.assets[0]) {
+          const asset = response.assets[0];
+          const attachedFile: AttachedFile = {
+            uri: asset.uri!,
+            type: 'image',
+            name: asset.fileName || `photo_${Date.now()}.jpg`,
+            size: asset.fileSize || 0,
+          };
+          setFormData({ ...formData, attachedFile });
+        }
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       Alert.alert('Error', `Failed to take photo: ${errorMessage}`);
@@ -289,25 +313,32 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   };
 
   const pickDocument = async () => {
+    Alert.alert('Not Available', 'Document picker is temporarily disabled during migration.');
+    /*
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
-        copyToCacheDirectory: true,
+      const result = await DocumentPicker.pick({
+        type: [DocumentPicker.types.allFiles],
+        allowMultiSelection: false,
       });
 
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
+      if (result && result[0]) {
+        const doc = result[0];
         const attachedFile: AttachedFile = {
-          uri: asset.uri,
+          uri: doc.uri,
           type: 'document',
-          name: asset.name,
-          size: asset.size,
+          name: doc.name || 'document',
+          size: doc.size || 0,
         };
         setFormData({ ...formData, attachedFile });
       }
     } catch (error) {
+      if (DocumentPicker.isCancel(error)) {
+        // User cancelled the picker
+        return;
+      }
       Alert.alert('Error', 'Failed to pick document');
     }
+    */
   };
 
   const removeAttachment = () => {
@@ -315,8 +346,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   };
 
   const showAttachmentOptions = () => {
-    // Defer open by one tick so the original press doesn't propagate into the overlay
-    setTimeout(() => setAttachmentOptionsVisible(true), 0);
+    setAttachmentOptionsVisible(true);
   };
 
   const handleAttachmentAction = (action: () => void) => {
@@ -622,7 +652,9 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
               onPress={showAttachmentOptions}
             >
               <IconComponent name={getIconName('attach-outline')} size={24} color={colors.primary} />
-              <Text style={styles.attachButtonText}>Add attachment</Text>
+              <Text style={styles.attachButtonText}>
+                Add attachment {attachmentOptionsVisible ? '(Modal Open)' : ''}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -757,21 +789,23 @@ const createStyles = (colors: any) => StyleSheet.create({
   // Modal / Bottom Sheet styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
+    zIndex: 9999,
   },
   backdrop: {
     flex: 1,
   },
   bottomSheet: {
     backgroundColor: colors.surface,
-    padding: 12,
+    padding: 16,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: colors.border,
+    minHeight: 200,
   },
   optionButton: {
     backgroundColor: colors.surface,

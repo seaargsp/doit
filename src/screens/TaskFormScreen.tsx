@@ -23,7 +23,7 @@ import { launchCamera, launchImageLibrary, ImagePickerResponse, MediaType } from
 import { pick, types } from '@react-native-documents/picker';
 
 import { RootStackParamList } from '../types/Navigation';
-import { Task, TaskFormData, RepeatPattern, NOTIFICATION_OPTIONS, REPEAT_OPTIONS, AttachedFile } from '../types/Task';
+import { Task, TaskFormData, NOTIFICATION_OPTIONS, REPEAT_OPTIONS, AttachedFile } from '../types/Task';
 import { StorageService } from '../services/StorageService';
 import { NotificationService } from '../services/NotificationService';
 import { AlarmService } from '../services/AlarmService';

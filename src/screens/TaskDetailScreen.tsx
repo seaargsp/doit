@@ -9,11 +9,9 @@ import {
   Linking,
   Image,
   Modal,
-  Platform,
 } from 'react-native';
 import { RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { RootStackParamList } from '../types/Navigation';
 import { Task, NOTIFICATION_OPTIONS } from '../types/Task';

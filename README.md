@@ -218,11 +218,12 @@ The app requires the following permissions:
 
 **Android**:
 - `CAMERA`: Camera access for photo attachments
-- `READ_EXTERNAL_STORAGE`: Gallery access
-- `WRITE_EXTERNAL_STORAGE`: File storage
+- `READ_EXTERNAL_STORAGE` (API ≤ 32): Gallery access
+- `READ_MEDIA_IMAGES`/`READ_MEDIA_VIDEO`/`READ_MEDIA_VISUAL_USER_SELECTED` (API 33+): Gallery access
+- `WRITE_EXTERNAL_STORAGE` (legacy devices)
 - `VIBRATE`: Notification vibration
-- `RECEIVE_BOOT_COMPLETED`: Notification persistence
 - `WAKE_LOCK`: Alarm functionality
+- `SCHEDULE_EXACT_ALARM`: Precise alarm scheduling
 
 **iOS**:
 - `NSCameraUsageDescription`: Camera access

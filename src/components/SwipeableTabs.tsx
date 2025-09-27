@@ -6,10 +6,8 @@ import {
   TouchableOpacity,
   Text,
   ScrollView,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../contexts/ThemeContext';
 import { getIconComponent } from '../utils/IconUtils';
 

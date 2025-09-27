@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 
 // Icon mapping for MaterialDesignIcons (MaterialCommunityIcons)
 export const iconMap = {

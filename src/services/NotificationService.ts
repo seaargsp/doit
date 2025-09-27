@@ -314,12 +314,7 @@ export class NotificationService {
     }
   }
 
-  /**
-   * Get all scheduled notifications for debugging
-   */
-  static async getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
-    return await Notifications.getAllScheduledNotificationsAsync();
-  }
+  // Intentionally no debug-only getters to keep API surface minimal
 
   /**
    * Schedule an immediate alarm notification (for continuous alarm system)

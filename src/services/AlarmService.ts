@@ -1,4 +1,4 @@
-import { NativeModules, DeviceEventEmitter, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { Task } from '../types/Task';
 import { NotificationService } from './NotificationService';
 

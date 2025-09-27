@@ -20,12 +20,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { launchCamera, launchImageLibrary, ImagePickerResponse, MediaType } from 'react-native-image-picker';
-// Document picker temporarily disabled during migration
+import { pick, types } from '@react-native-documents/picker';
 
 import { RootStackParamList } from '../types/Navigation';
 import { Task, TaskFormData, RepeatPattern, NOTIFICATION_OPTIONS, REPEAT_OPTIONS, AttachedFile } from '../types/Task';
 import { StorageService } from '../services/StorageService';
 import { NotificationService } from '../services/NotificationService';
+import { AlarmService } from '../services/AlarmService';
 import { TaskUtils } from '../utils/TaskUtils';
 import { getIconName, getIconComponent } from '../utils/IconUtils';
 import { useTheme } from '../contexts/ThemeContext';
@@ -153,6 +154,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
         await StorageService.updateTask(updatedTask);
         await NotificationService.updateTaskNotifications(updatedTask);
+        await AlarmService.updateTaskAlarms(updatedTask);
       } else {
         // Create new task
         const newTask: Task = {
@@ -163,6 +165,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
         await StorageService.addTask(newTask);
         await NotificationService.scheduleTaskNotifications(newTask);
+        await AlarmService.updateTaskAlarms(newTask);
       }
 
       navigation.goBack();
@@ -191,24 +194,110 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
     }
   };
 
+  const checkAndRequestPermission = async (permission: string, title: string, message: string): Promise<boolean> => {
+    if (Platform.OS !== 'android') {
+      return true; // iOS handles permissions automatically
+    }
+
+    try {
+      // For Android 13+, use different permissions for media access
+      let permissionToRequest = permission;
+      if (permission === PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE) {
+        // Check Android version and use appropriate permission
+        const androidVersion = Platform.Version as number;
+        if (androidVersion >= 33) {
+          // Android 13+ uses granular media permissions - try images first
+          try {
+            const imagePermission = await PermissionsAndroid.request(
+              'android.permission.READ_MEDIA_IMAGES' as any,
+              { 
+                title: 'Photo Access', 
+                message: 'This app needs access to your photos to attach images to tasks. This permission is optional and only used when you choose to attach photos.',
+                buttonNeutral: 'Ask Me Later', 
+                buttonNegative: 'Cancel', 
+                buttonPositive: 'OK' 
+              }
+            );
+            
+            if (imagePermission === PermissionsAndroid.RESULTS.GRANTED) {
+              return true;
+            } else if (imagePermission === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+              Alert.alert(
+                'Photo Access Required',
+                'To attach photos from your gallery, please enable photo access in your device settings.\\n\\nGo to: Settings → Apps → DoIt → Permissions → Photos',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Open Settings', onPress: () => Linking.openSettings() }
+                ]
+              );
+            } else {
+              Alert.alert(
+                'Photo Access Required',
+                'Photo access is needed to attach images from your gallery. You can enable this later in your device settings if needed.',
+                [{ text: 'OK' }]
+              );
+            }
+            return false;
+          } catch {
+            // Fallback to legacy permission
+            permissionToRequest = permission;
+          }
+        }
+      }
+
+      const granted = await PermissionsAndroid.request(permissionToRequest as any, {
+        title,
+        message,
+        buttonNeutral: 'Ask Me Later',
+        buttonNegative: 'Cancel',
+        buttonPositive: 'OK',
+      });
+
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        return true;
+      } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+        Alert.alert(
+          'Permission Required',
+          `${title.replace(' Permission', '')} access is needed for this feature. Please enable it manually in your device settings.\\n\\nGo to: Settings → Apps → DoIt → Permissions`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
+        return false;
+      } else {
+        Alert.alert(
+          'Permission Required',
+          `${title.replace(' Permission', '')} access is needed for this feature. You can enable it in your device settings if you change your mind.`,
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+    } catch (error) {
+      console.warn('Permission request failed:', error);
+      Alert.alert(
+        'Permission Error',
+        'Unable to request permission. Please enable it manually in your device settings.\\n\\nGo to: Settings → Apps → DoIt → Permissions',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() }
+        ]
+      );
+      return false;
+    }
+  };
+
   const pickImage = async () => {
     try {
       // Request gallery permissions for Android
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-          {
-            title: 'Gallery Permission',
-            message: 'This app needs access to your gallery to select photos.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          },
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert('Permission needed', 'Please grant gallery permissions to attach images.');
-          return;
-        }
+      const hasPermission = await checkAndRequestPermission(
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        'Gallery Permission',
+        'This app needs access to your gallery to select photos.'
+      );
+
+      if (!hasPermission) {
+        return;
       }
 
       const options = {
@@ -241,29 +330,15 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
   const takePhoto = async () => {
     try {
-      // Request camera permissions for Android
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.CAMERA,
-          {
-            title: 'Camera Permission',
-            message: 'This app needs access to your camera to take photos.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          },
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert(
-            'Permission needed', 
-            'Camera access is required to take photos. Please grant camera permissions in your device settings.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Settings', onPress: () => Linking.openSettings() }
-            ]
-          );
-          return;
-        }
+      // Request camera permissions
+      const hasPermission = await checkAndRequestPermission(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        'Camera Permission',
+        'This app needs access to your camera to take photos.'
+      );
+
+      if (!hasPermission) {
+        return;
       }
 
       const options = {
@@ -314,32 +389,33 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
   const pickDocument = async () => {
     try {
-      // For now, use image picker to select documents (many document types can be viewed as images)
-      const options = {
-        mediaType: 'mixed' as MediaType,
-        quality: 0.8 as const,
-        includeBase64: false,
-        selectionLimit: 1,
-      };
-
-      launchImageLibrary(options, (response: ImagePickerResponse) => {
-        if (response.didCancel || response.errorMessage) {
-          return;
-        }
-
-        if (response.assets && response.assets[0]) {
-          const asset = response.assets[0];
-          const attachedFile: AttachedFile = {
-            uri: asset.uri!,
-            type: 'document',
-            name: asset.fileName || `document_${Date.now()}`,
-            size: asset.fileSize || 0,
-          };
-          setFormData({ ...formData, attachedFile });
-        }
+      // Use the @react-native-documents/picker API
+      const results = await pick({
+        type: types.allFiles,
+        allowMultiSelection: false,
       });
-    } catch (error) {
-      Alert.alert('Error', 'Failed to pick document');
+
+      if (results && results.length > 0) {
+        const doc = results[0];
+        const attachedFile: AttachedFile = {
+          uri: doc.uri,
+          type: 'document',
+          name: doc.name || `document_${Date.now()}`,
+          size: doc.size || 0,
+        };
+        setFormData({ ...formData, attachedFile });
+      }
+    } catch (error: any) {
+      // Check if user cancelled the picker
+      if (error?.userCancel || error?.message?.includes('cancelled') || error?.message?.includes('canceled')) {
+        return;
+      }
+      console.log('Document picker error:', error);
+      Alert.alert(
+        'Document Selection Error',
+        'Unable to select document. Please make sure you have access to the file and try again.\\n\\nYou can select PDFs, Word documents, and other file types.',
+        [{ text: 'OK' }]
+      );
     }
   };
 

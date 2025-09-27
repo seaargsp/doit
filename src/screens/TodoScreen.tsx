@@ -14,6 +14,7 @@ import { Task } from '../types/Task';
 import { RootStackParamList } from '../types/Navigation';
 import { StorageService } from '../services/StorageService';
 import { NotificationService } from '../services/NotificationService';
+import { AlarmService } from '../services/AlarmService';
 import { TaskUtils } from '../utils/TaskUtils';
 import { useTheme } from '../contexts/ThemeContext';
 import SearchHeader from '../components/SearchHeader';
@@ -76,6 +77,7 @@ export default function TodoScreen() {
 
     try {
       await NotificationService.cancelTaskNotifications(selectedTask.id);
+      await AlarmService.cancelTaskAlarms(selectedTask.id);
       await StorageService.deleteTask(selectedTask.id);
       await loadTasks();
     } catch (error) {
@@ -100,6 +102,7 @@ export default function TodoScreen() {
       // Handle notifications for completed task
       if (!TaskUtils.isCompleted(task)) {
         await NotificationService.handleTaskCompletion(task.id, true);
+        await AlarmService.cancelTaskAlarms(task.id);
       }
 
       await StorageService.updateTask(updatedTask);

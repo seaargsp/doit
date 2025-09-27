@@ -19,6 +19,7 @@ import { RootStackParamList } from '../types/Navigation';
 import { Task, NOTIFICATION_OPTIONS } from '../types/Task';
 import { StorageService } from '../services/StorageService';
 import { NotificationService } from '../services/NotificationService';
+import { AlarmService } from '../services/AlarmService';
 import { TaskUtils } from '../utils/TaskUtils';
 import { getIconName, getIconComponent } from '../utils/IconUtils';
 import { useTheme } from '../contexts/ThemeContext';
@@ -111,6 +112,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
 
         // Cancel notifications for completed task
         await NotificationService.handleTaskCompletion(task.id, true);
+        await AlarmService.cancelTaskAlarms(task.id);
         await StorageService.updateTask(updatedTask);
         
         navigation.goBack();
@@ -136,6 +138,7 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
           onPress: async () => {
             try {
               await NotificationService.cancelTaskNotifications(task!.id);
+              await AlarmService.cancelTaskAlarms(task!.id);
               await StorageService.deleteTask(task!.id);
               navigation.goBack();
             } catch (error) {

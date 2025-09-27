@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootStackParamList } from './types/Navigation';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { NotificationService } from './services/NotificationService';
+import { AlarmService } from './services/AlarmService';
+import * as Notifications from 'expo-notifications';
 
 // Import components
 import MainScreen from './screens/MainScreen';
@@ -69,6 +72,24 @@ function AppNavigator() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Initialize notification service on app startup
+    NotificationService.initialize();
+
+    // Handle notification interactions (for alarm dismissal)
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const notification = response.notification;
+      const data = notification.request.content.data;
+      
+      if (data?.type === 'alarm' && data?.taskId) {
+        // User interacted with alarm notification - dismiss the alarm
+        AlarmService.cancelTaskAlarms(data.taskId as string);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <ThemeProvider>

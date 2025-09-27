@@ -14,7 +14,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.DoIt"
+      "bundleIdentifier": "com.anonymous.DoIt",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to attach photos to your tasks. Camera access is optional and only requested when you choose to take a photo.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to attach images to your tasks. Photo library access is optional and only requested when you choose to select a photo.",
+        "NSMicrophoneUsageDescription": "This app does not use the microphone, but camera access may require this permission on some devices."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,10 +28,33 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.DoIt"
+      "package": "com.anonymous.DoIt",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.USE_FULL_SCREEN_INTENT",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ffffff",
+          "defaultChannel": "default"
+        }
+      ]
+    ]
   }
 }

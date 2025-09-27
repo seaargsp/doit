@@ -201,56 +201,69 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
     try {
       // For Android 13+, use different permissions for media access
-      let permissionToRequest = permission;
       if (permission === PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE) {
-        // Check Android version and use appropriate permission
         const androidVersion = Platform.Version as number;
+        
         if (androidVersion >= 33) {
-          // Android 13+ uses granular media permissions - try images first
+          // Android 13+ uses granular media permissions
           try {
-            const imagePermission = await PermissionsAndroid.request(
+            // Try the new media images permission first
+            const mediaImagesGranted = await PermissionsAndroid.request(
               'android.permission.READ_MEDIA_IMAGES' as any,
-              { 
-                title: 'Photo Access', 
+              {
+                title: 'Photo Access',
                 message: 'This app needs access to your photos to attach images to tasks. This permission is optional and only used when you choose to attach photos.',
-                buttonNeutral: 'Ask Me Later', 
-                buttonNegative: 'Cancel', 
-                buttonPositive: 'OK' 
+                buttonNeutral: 'Ask Me Later',
+                buttonNegative: 'Deny',
+                buttonPositive: 'Allow',
               }
             );
-            
-            if (imagePermission === PermissionsAndroid.RESULTS.GRANTED) {
+
+            if (mediaImagesGranted === PermissionsAndroid.RESULTS.GRANTED) {
               return true;
-            } else if (imagePermission === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-              Alert.alert(
-                'Photo Access Required',
-                'To attach photos from your gallery, please enable photo access in your device settings.\\n\\nGo to: Settings → Apps → DoIt → Permissions → Photos',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Open Settings', onPress: () => Linking.openSettings() }
-                ]
-              );
-            } else {
-              Alert.alert(
-                'Photo Access Required',
-                'Photo access is needed to attach images from your gallery. You can enable this later in your device settings if needed.',
-                [{ text: 'OK' }]
-              );
             }
+
+            // If denied, try the visual media permission as fallback
+            const visualMediaGranted = await PermissionsAndroid.request(
+              'android.permission.READ_MEDIA_VISUAL_USER_SELECTED' as any,
+              {
+                title: 'Photo Access',
+                message: 'Allow access to selected photos only.',
+                buttonNeutral: 'Ask Me Later',
+                buttonNegative: 'Deny', 
+                buttonPositive: 'Allow',
+              }
+            );
+
+            if (visualMediaGranted === PermissionsAndroid.RESULTS.GRANTED) {
+              return true;
+            }
+
+            // If both new permissions fail, show helpful message
+            Alert.alert(
+              'Photo Access Required',
+              'To attach photos from your gallery, please enable photo access in your device settings.\n\nGo to: Settings → Apps → DoIt → Permissions → Photos and Media → Allow',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Open Settings', onPress: () => Linking.openSettings() }
+              ]
+            );
             return false;
-          } catch {
-            // Fallback to legacy permission
-            permissionToRequest = permission;
+
+          } catch (error) {
+            console.warn('Android 13+ permission request failed:', error);
+            // Fall through to legacy permission handling
           }
         }
       }
 
-      const granted = await PermissionsAndroid.request(permissionToRequest as any, {
+      // Legacy permission handling for older Android versions or fallback
+      const granted = await PermissionsAndroid.request(permission as any, {
         title,
         message,
         buttonNeutral: 'Ask Me Later',
-        buttonNegative: 'Cancel',
-        buttonPositive: 'OK',
+        buttonNegative: 'Deny',
+        buttonPositive: 'Allow',
       });
 
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
@@ -258,7 +271,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
       } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
         Alert.alert(
           'Permission Required',
-          `${title.replace(' Permission', '')} access is needed for this feature. Please enable it manually in your device settings.\\n\\nGo to: Settings → Apps → DoIt → Permissions`,
+          `${title.replace(' Permission', '')} access is needed for this feature. Please enable it manually in your device settings.\n\nGo to: Settings → Apps → DoIt → Permissions`,
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Open Settings', onPress: () => Linking.openSettings() }
@@ -277,7 +290,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
       console.warn('Permission request failed:', error);
       Alert.alert(
         'Permission Error',
-        'Unable to request permission. Please enable it manually in your device settings.\\n\\nGo to: Settings → Apps → DoIt → Permissions',
+        'Unable to request permission. Please enable it manually in your device settings.\n\nGo to: Settings → Apps → DoIt → Permissions',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Open Settings', onPress: () => Linking.openSettings() }
@@ -293,7 +306,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
       const hasPermission = await checkAndRequestPermission(
         PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
         'Gallery Permission',
-        'This app needs access to your gallery to select photos.'
+        'This app needs access to your photos to attach images to tasks.'
       );
 
       if (!hasPermission) {

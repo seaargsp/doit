@@ -188,7 +188,7 @@ export class NotificationService {
       await Notifications.scheduleNotificationAsync({
         identifier: alarmIdentifier,
         content: {
-          title: `🚨 TASK ALARM: ${task.title}`,
+          title: `${task.title}`,
           body: offsetMinutes === 0 
             ? `"${task.title}" is due now!` 
             : `"${task.title}" alarm - due in ${this.formatOffset(offsetMinutes)}`,
@@ -294,7 +294,7 @@ export class NotificationService {
       await Notifications.scheduleNotificationAsync({
         identifier: `${task.id}_immediate_alarm`,
         content: {
-          title: `🚨 TASK ALARM: ${task.title}`,
+          title: `${task.title}`,
           body: `"${task.title}" requires your attention!`,
           data: { taskId: task.id, type: 'alarm', isAlarm: true, immediate: true },
           sound: true,

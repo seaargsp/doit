@@ -77,13 +77,25 @@ export default function App() {
     NotificationService.initialize();
 
     // Handle notification interactions (for alarm dismissal)
-    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(async response => {
       const notification = response.notification;
       const data = notification.request.content.data;
+      const actionId = response.actionIdentifier;
       
+      // Handle explicit dismiss action button
+      if (actionId === 'DISMISS_ALARM' && data?.taskId) {
+        AlarmService.cancelTaskAlarms(data.taskId as string);
+        try { await NotificationService.cancelTaskNotifications(data.taskId as string); } catch {}
+        return;
+      }
+
       if (data?.type === 'alarm' && data?.taskId) {
         // User interacted with alarm notification - dismiss the alarm
         AlarmService.cancelTaskAlarms(data.taskId as string);
+        // Also cancel any scheduled alarm notifications/echo sounds
+        try {
+          await NotificationService.cancelTaskNotifications(data.taskId as string);
+        } catch {}
       }
     });
 

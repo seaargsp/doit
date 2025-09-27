@@ -42,16 +42,20 @@ export class AlarmService {
    */
   private static async triggerAlarm(task: Task, alarmId: string): Promise<void> {
     try {
-      // Create a high-priority notification that acts as the alarm trigger
-      await NotificationService.scheduleImmediateAlarm(task);
-      
-      // Start the alarm sound loop
-      this.startAlarmSound(alarmId);
-      
-      // Auto-dismiss after 60 seconds
-      setTimeout(() => {
-        this.dismissAlarm(alarmId);
-      }, 60000);
+      if (Platform.OS === 'android') {
+        // On Android we rely on OS-scheduled echo notifications for continuous sound
+        // Just set auto-dismiss to clear timers and cancel pending notifications after 60s
+        setTimeout(() => {
+          this.dismissAlarm(alarmId);
+        }, 60000);
+      } else {
+        // iOS: use immediate notification + JS-driven sound loop as best-effort
+        await NotificationService.scheduleImmediateAlarm(task);
+        this.startAlarmSound(alarmId);
+        setTimeout(() => {
+          this.dismissAlarm(alarmId);
+        }, 60000);
+      }
       
     } catch (error) {
       console.warn('Failed to trigger alarm:', error);
@@ -99,6 +103,12 @@ export class AlarmService {
       clearInterval(soundInterval as NodeJS.Timeout);
       this.activeAlarms.delete(`${alarmId}_sound`);
     }
+
+    // Also cancel any scheduled notifications/echoes for this task
+    try {
+      const taskId = alarmId.split('_alarm_')[0];
+      void NotificationService.cancelTaskNotifications(taskId);
+    } catch {}
   }
 
   /**

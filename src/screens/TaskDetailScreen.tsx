@@ -11,7 +11,7 @@ import {
   Modal,
   Platform,
 } from 'react-native';
-import { RouteProp } from '@react-navigation/native';
+import { RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -42,6 +42,14 @@ export default function TaskDetailScreen({ route, navigation }: TaskDetailScreen
   useEffect(() => {
     loadTask();
   }, [taskId]);
+
+  // Reload the task whenever this screen regains focus (e.g., after editing)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadTask();
+      return () => {};
+    }, [taskId])
+  );
 
   // Update header with edit and delete buttons
   useEffect(() => {

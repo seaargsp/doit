@@ -10,10 +10,12 @@ try {
   Notifications.setNotificationHandler({
     handleNotification: async (notification) => {
       const isAlarm = notification.request.content.data?.isAlarm === true;
+      const type = notification.request.content.data?.type as string | undefined;
+      const isEcho = type === 'alarm_echo' || type === 'sound_only';
       
       return {
-        shouldShowBanner: true,
-        shouldShowList: true,
+        shouldShowBanner: !isEcho,
+        shouldShowList: !isEcho,
         shouldPlaySound: true,
         shouldSetBadge: true,
         // Enhanced settings for alarm notifications
@@ -49,6 +51,15 @@ try {
       showBadge: true,
     });
   }
+
+  // Register alarm category with a dismiss action (shown on both platforms)
+  Notifications.setNotificationCategoryAsync('ALARM_CATEGORY', [
+    {
+      identifier: 'DISMISS_ALARM',
+      buttonTitle: 'Dismiss',
+      options: { opensAppToForeground: false },
+    },
+  ]);
 } catch (error) {
   // Notifications not supported
   isNotificationSupported = false;
@@ -196,6 +207,7 @@ export class NotificationService {
           sound: true, // Force sound
           priority: Notifications.AndroidNotificationPriority.MAX,
           sticky: false,
+          categoryIdentifier: 'ALARM_CATEGORY',
           // Use alarm channel on Android for enhanced sound
           ...(Platform.OS === 'android' && {
             channelId: 'alarm',
@@ -207,6 +219,33 @@ export class NotificationService {
           repeats: false,
         },
       });
+
+      // Android: schedule additional short, sound-only notifications to emulate a clock alarm
+      // This creates a continuous audible alarm for up to 60 seconds without relying on JS timers
+      if (Platform.OS === 'android') {
+        const intervalSeconds = 5; // Play a sound every 5 seconds
+        const repeats = 12; // 12 * 5s = 60 seconds total
+        for (let i = 1; i <= repeats; i++) {
+          const followUpId = `${task.id}_alarm_${offsetMinutes}_echo_${i}`;
+          const secondsUntilEcho = secondsUntilAlarm + i * intervalSeconds;
+          await Notifications.scheduleNotificationAsync({
+            identifier: followUpId,
+            content: {
+              title: '🔊',
+              body: '',
+              data: { taskId: task.id, type: 'alarm_echo', isAlarm: true, echoIndex: i },
+              sound: true,
+              priority: Notifications.AndroidNotificationPriority.MAX,
+              ...(Platform.OS === 'android' && { channelId: 'alarm' }),
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+              seconds: secondsUntilEcho,
+              repeats: false,
+            },
+          });
+        }
+      }
     } catch (error) {
       // Silent error handling
     }
@@ -300,6 +339,7 @@ export class NotificationService {
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
           sticky: true,
+          categoryIdentifier: 'ALARM_CATEGORY',
           ...(Platform.OS === 'android' && {
             channelId: 'alarm',
           }),

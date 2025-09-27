@@ -23,8 +23,8 @@ try {
       };
     },
   });
-} catch (error) {
-  console.warn('Notifications not fully supported in this environment:', error);
+  } catch (error) {
+    // Notifications not supported
   isNotificationSupported = false;
 }
 
@@ -34,7 +34,6 @@ export class NotificationService {
    */
   static async requestPermissions(): Promise<boolean> {
     if (!isNotificationSupported) {
-      console.warn('Notifications not supported in this environment');
       return false;
     }
 
@@ -49,7 +48,6 @@ export class NotificationService {
 
       return finalStatus === 'granted';
     } catch (error) {
-      console.warn('Failed to request notification permissions:', error);
       return false;
     }
   }
@@ -59,7 +57,6 @@ export class NotificationService {
    */
   static async scheduleTaskNotifications(task: Task): Promise<void> {
     if (!isNotificationSupported) {
-      console.warn('Notifications not supported - skipping notification scheduling');
       return;
     }
 
@@ -76,7 +73,6 @@ export class NotificationService {
     try {
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
-        console.warn('Notification permissions not granted - skipping notifications');
         return;
       }
 
@@ -113,7 +109,7 @@ export class NotificationService {
         }
       }
     } catch (error) {
-      console.error('Error scheduling notifications:', error);
+      // Silent error handling
       throw new Error('Notification could not be scheduled');
     }
   }
@@ -155,7 +151,7 @@ export class NotificationService {
         },
       });
     } catch (error) {
-      console.error('Error scheduling alarm notification:', error);
+      // Silent error handling
     }
   }
 
@@ -178,7 +174,7 @@ export class NotificationService {
         await Notifications.cancelScheduledNotificationAsync(notification.identifier);
       }
     } catch (error) {
-      console.error('Error canceling notifications:', error);
+      // Silent error handling
     }
   }
 

@@ -12,7 +12,6 @@ export class StorageService {
       }
       return [];
     } catch (error) {
-      console.error('Error loading tasks:', error);
       throw new Error('Could not load tasks');
     }
   }
@@ -22,7 +21,7 @@ export class StorageService {
       const tasksJson = JSON.stringify(tasks);
       await AsyncStorage.setItem(TASKS_STORAGE_KEY, tasksJson);
     } catch (error) {
-      console.error('Error saving tasks:', error);
+      // Silent error handling
       throw new Error('Could not save tasks');
     }
   }
@@ -33,8 +32,7 @@ export class StorageService {
       tasks.push(task);
       await this.saveTasks(tasks);
     } catch (error) {
-      console.error('Error adding task:', error);
-      throw new Error('Could not save task');
+      throw error;
     }
   }
 
@@ -48,8 +46,7 @@ export class StorageService {
       tasks[index] = updatedTask;
       await this.saveTasks(tasks);
     } catch (error) {
-      console.error('Error updating task:', error);
-      throw new Error('Could not update task');
+      throw error;
     }
   }
 
@@ -59,8 +56,7 @@ export class StorageService {
       const filteredTasks = tasks.filter(task => task.id !== taskId);
       await this.saveTasks(filteredTasks);
     } catch (error) {
-      console.error('Error deleting task:', error);
-      throw new Error('Could not delete task');
+      throw error;
     }
   }
 
@@ -69,7 +65,6 @@ export class StorageService {
       const tasks = await this.getTasks();
       return tasks.find(task => task.id === taskId) || null;
     } catch (error) {
-      console.error('Error getting task by id:', error);
       return null;
     }
   }

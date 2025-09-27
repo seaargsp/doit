@@ -198,10 +198,11 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
+        base64: false,
+        exif: false,
       });
 
       if (!result.canceled && result.assets[0]) {
@@ -221,30 +222,69 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
 
   const takePhoto = async () => {
     try {
+      // Check if camera is available
+      const cameraAvailable = await ImagePicker.getCameraPermissionsAsync();
+
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Please grant camera permissions to take photos.');
+        Alert.alert(
+          'Permission needed', 
+          'Camera access is required to take photos. Please grant camera permissions in your device settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Settings', onPress: () => {} }
+          ]
+        );
         return;
       }
 
-      const result = await ImagePicker.launchCameraAsync({
+      // Add timeout to detect camera launch issues on real devices
+      const cameraPromise = ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
+        base64: false, // Explicitly disable base64 for better performance on real devices
+        exif: false, // Disable EXIF data for privacy and performance
       });
 
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        const attachedFile: AttachedFile = {
-          uri: asset.uri,
-          type: 'image',
-          name: asset.fileName || `photo_${Date.now()}.jpg`,
-          size: asset.fileSize,
-        };
-        setFormData({ ...formData, attachedFile });
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Camera launch timeout - this may be a device-specific issue')), 30000)
+      );
+
+      const result = await Promise.race([cameraPromise, timeoutPromise]) as ImagePicker.ImagePickerResult;
+
+      if (result.canceled) {
+        return;
       }
+
+      if (!result.assets || result.assets.length === 0) {
+        Alert.alert('Error', 'No photo was captured. Please try again.');
+        return;
+      }
+
+      if (!result.assets[0]) {
+        Alert.alert('Error', 'Photo capture failed. Please try again.');
+        return;
+      }
+
+      const asset = result.assets[0];
+
+      if (!asset.uri) {
+        Alert.alert('Error', 'Photo could not be saved. Please try again.');
+        return;
+      }
+
+      const attachedFile: AttachedFile = {
+        uri: asset.uri,
+        type: 'image',
+        name: asset.fileName || `photo_${Date.now()}.jpg`,
+        size: asset.fileSize,
+      };
+      setFormData({ ...formData, attachedFile });
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Alert.alert('Error', `Failed to take photo: ${errorMessage}`);
     }
   };
 
@@ -282,7 +322,10 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   const handleAttachmentAction = (action: () => void) => {
     // Close the modal first, then perform the action to avoid UI conflicts
     setAttachmentOptionsVisible(false);
-    setTimeout(() => action(), 120);
+    // Increased delay to ensure modal is fully closed on all devices
+    setTimeout(() => {
+      action();
+    }, 200);
   };
 
   const toggleNotificationOffset = (offset: number) => {

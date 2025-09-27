@@ -313,32 +313,34 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
   };
 
   const pickDocument = async () => {
-    Alert.alert('Not Available', 'Document picker is temporarily disabled during migration.');
-    /*
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.allFiles],
-        allowMultiSelection: false,
-      });
+      // For now, use image picker to select documents (many document types can be viewed as images)
+      const options = {
+        mediaType: 'mixed' as MediaType,
+        quality: 0.8 as const,
+        includeBase64: false,
+        selectionLimit: 1,
+      };
 
-      if (result && result[0]) {
-        const doc = result[0];
-        const attachedFile: AttachedFile = {
-          uri: doc.uri,
-          type: 'document',
-          name: doc.name || 'document',
-          size: doc.size || 0,
-        };
-        setFormData({ ...formData, attachedFile });
-      }
+      launchImageLibrary(options, (response: ImagePickerResponse) => {
+        if (response.didCancel || response.errorMessage) {
+          return;
+        }
+
+        if (response.assets && response.assets[0]) {
+          const asset = response.assets[0];
+          const attachedFile: AttachedFile = {
+            uri: asset.uri!,
+            type: 'document',
+            name: asset.fileName || `document_${Date.now()}`,
+            size: asset.fileSize || 0,
+          };
+          setFormData({ ...formData, attachedFile });
+        }
+      });
     } catch (error) {
-      if (DocumentPicker.isCancel(error)) {
-        // User cancelled the picker
-        return;
-      }
       Alert.alert('Error', 'Failed to pick document');
     }
-    */
   };
 
   const removeAttachment = () => {
@@ -652,9 +654,7 @@ export default function TaskFormScreen({ route, navigation }: TaskFormScreenProp
               onPress={showAttachmentOptions}
             >
               <IconComponent name={getIconName('attach-outline')} size={24} color={colors.primary} />
-              <Text style={styles.attachButtonText}>
-                Add attachment {attachmentOptionsVisible ? '(Modal Open)' : ''}
-              </Text>
+              <Text style={styles.attachButtonText}>Add attachment</Text>
             </TouchableOpacity>
           )}
         </View>

@@ -1,32 +1,60 @@
-# DoIt - To-Do App Requirements
+# DoIt - Task Management App
 
-## **Core App Structure**
-- **Framework**: Expo SDK 54.0+ with React Native + TypeScript
-- **Storage**: Local-only with AsyncStorage (no backend)
-- **Navigation**: React Navigation native stack with theme integration
-- **Safe Area**: Full safe area inset support for gesture and button navigation
+## **Overview**
+A modern, feature-rich task management application built with React Native and TypeScript. DoIt combines intuitive design with powerful functionality to help users organize their tasks effectively.
 
-## **UI Architecture**
+## **Core Architecture**
+- **Framework**: React Native + TypeScript with Expo SDK integration
+- **Navigation**: React Navigation native stack with custom swipeable tabs
+- **Storage**: Local-only AsyncStorage implementation (no backend required)
+- **Platform Support**: iOS and Android with platform-specific optimizations
+- **Dependencies**: Native React Native packages for enhanced performance and compatibility
 
-### **Main Navigation**
-- Swipeable horizontal tabs (Instagram-style) with dot indicators
-- Two main screens: Todo List and Completed List
-- Floating Action Button (Material Design FAB) for quick task creation
-- Safe area adaptive positioning for navigation bars
+## **Recent Major Updates**
 
-### **Theme System**
-- Automatic light/dark mode detection with manual override
-- Consistent color scheme across all components
-- Status bar integration with theme colors
+### 🔧 **Expo to React Native Migration**
+- **Camera & Gallery**: Migrated from `expo-image-picker` to `react-native-image-picker`
+  - **Fixed Camera Timeout Issues**: Resolved device-specific camera launch delays
+  - **Enhanced Error Handling**: Better timeout detection and user feedback
+  - **Improved Performance**: Native implementation for faster camera access
+  - **Better Permissions**: Platform-specific permission handling for Android/iOS
+- **File Management**: Streamlined attachment system with modal-based selection
+- **Build Compatibility**: Optimized for both Expo development and React Native CLI builds
 
-### **Search Experience**
-- Full-width search header with native platform icons
-- Real-time filtering across both Todo and Completed lists
-- Case-insensitive title and description matching
+### 🔊 **Enhanced Alarm System**
+- **Dual Notification System**: Regular reminders + high-priority audible alarms
+- **Flexible Timing**: Alarms at notification times or due time if no notifications set
+- **Clock App Style**: Persistent, audible alerts with maximum priority
+- **Smart Scheduling**: Automatic cancellation when tasks are completed
+- **Visual Integration**: Clear UI indicators showing when alarms will sound
 
-## **Task Management**
+### 📱 **Attachment System Improvements**
+- **Modal-Based Selection**: Clean bottom sheet for attachment options
+- **Camera Integration**: 
+  - Fixed timeout issues on real devices
+  - Enhanced error messages with troubleshooting tips
+  - Retry functionality built into error dialogs
+- **Gallery Access**: Smooth photo library integration
+- **File Preview**: Improved attachment preview and management
 
-### **Task Data Model**
+## **Key Features**
+
+### **Task Management**
+- **Smart Lists**: Todo and Completed task organization
+- **Search**: Real-time filtering across all tasks
+- **Context Actions**: Long-press menus and swipe gestures
+- **File Attachments**: Camera, gallery, and document support
+- **Repeat Patterns**: Daily, weekly, monthly, and custom schedules
+
+### **Advanced Notifications**
+- **Multiple Reminders**: Set multiple notification times per task
+- **Alarm Integration**: High-priority audible alarms alongside regular notifications
+- **Smart Scheduling**: Skips past notification times automatically
+- **Persistent Alerts**: Clock-style alarm notifications for important tasks
+
+## **Technical Architecture**
+
+### **Data Model**
 ```typescript
 interface Task {
   id: string;                    // UUID
@@ -34,117 +62,274 @@ interface Task {
   description?: string;          // Optional with URL support
   dueDateTime?: string;          // ISO 8601
   notificationOffsets?: number[]; // Minutes before due
-  hasAlarm?: boolean;            // Audible alarm at notification times
+  hasAlarm?: boolean;            // Audible alarm feature
   repeatPattern: "none" | "daily" | "weekly" | "monthly" | "custom";
-  customDays?: number[];         // For custom weekly patterns (0-6)
+  customDays?: number[];         // Custom weekly patterns (0-6)
   createdAt: string;            // ISO 8601
   completedAt?: string;         // ISO 8601, null if active
-  attachedFile?: AttachedFile;  // Optional file attachment
+  attachedFile?: AttachedFile;  // File attachment data
 }
 ```
 
-### **Task Lists Behavior**
-- **Todo List**: Active tasks + completed tasks (< 24 hours) with strikethrough
-- **Completed List**: All completed tasks, newest first
-- **Auto-cleanup**: Remove completed tasks from Todo after 24 hours
+### **Native Dependencies**
+- `react-native-image-picker`: Camera and gallery access
+- `@react-native-async-storage/async-storage`: Local data persistence
+- `expo-notifications`: Advanced notification system with alarm support
+- `react-native-vector-icons`: Material Design icon library
+- `@react-native-community/datetimepicker`: Native date/time selection
 
-### **Task Actions**
-- Tap task → Detail view with enhanced styling
-- Long press → Context menu (Edit, Delete, Complete)
-- Swipe actions for quick completion
+### **Core Services**
+- **StorageService**: AsyncStorage wrapper with error handling
+- **NotificationService**: Dual notification system (regular + alarm)
+- **TaskUtils**: Business logic for task management and repeat patterns
+- **ThemeContext**: Light/dark mode with system integration
+
+## **User Interface**
+
+### **Navigation System**
+- **Swipeable Tabs**: Instagram-style horizontal navigation with dot indicators
+- **Floating Action Button**: Material Design FAB for quick task creation
+- **Safe Area Integration**: Adaptive positioning for modern device form factors
+
+### **Screen Organization**
+- **Todo Screen**: Active tasks with recent completions (24hr window)
+- **Completed Screen**: Full completion history, newest first
+- **Task Detail**: Enhanced view with prominent actions and metadata
+- **Task Form**: Comprehensive creation/editing with sticky bottom buttons
+
+### **Theme System**
+- **Automatic Detection**: System light/dark mode integration
+- **Manual Override**: User preference settings
+- **Consistent Colors**: Unified palette across all components
+- **Accessibility**: High contrast and readable text sizing
+
+### **Search & Filtering**
+- **Real-time Search**: Instant filtering across title and description
+- **Full-width Header**: Edge-to-edge search input with native icons
+- **Cross-list Search**: Searches both Todo and Completed simultaneously
 
 ## **Advanced Features**
 
-### **File Attachments**
-- Image capture via camera or photo library (expo-image-picker)
-- Document selection (expo-document-picker)
-- Local file storage with preview capabilities
-- Modal-based attachment picker (not Alert-based for Android compatibility)
+### **Alarm System** 🔊
+The app includes a sophisticated dual-notification system that provides both regular reminders and high-priority alarms:
 
-### **Notifications**
-- Local notifications using expo-notifications
-- Multiple reminder offsets per task
-- Smart scheduling (skip past times)
-- Cancel notifications on task completion/deletion
-- **Audible Alarm System**: High-priority alarm notifications that work alongside regular reminders
+**Dual Alert Mechanism**:
+- **Regular Notifications**: Standard system notifications for reminders
+- **Alarm Notifications**: High-priority, clock-app-style alerts with forced sound
+- **Unified Scheduling**: Both types fire at the same notification times
 
-### **Alarm System**
-- **Dual Alert System**: Regular notifications + audible alarms at the same times
-- **Flexible Timing**: Alarms sound at notification times, or at due time if no notifications set
-- **High Priority**: Enhanced notification priority with forced sound and visual prominence
-- **Clock App Style**: Persistent, audible alerts similar to phone alarm apps
-- **Smart Scheduling**: Automatic alarm cancellation when tasks are completed or deleted
+**Flexible Alarm Timing**:
+- **With Notification Times**: Alarms sound at each selected notification offset
+- **Alarm-Only Mode**: If no notification times are set, alarm sounds at due time
+- **Smart Scheduling**: Automatically skips past notification times
 
-### **Repeat Patterns**
-- Standard patterns: daily, weekly, monthly
-- Custom weekly patterns with interactive weekday selection
-- Auto-generate new tasks on completion with repeat patterns
-- Preserve original task in completed history
+**Enhanced Priority**:
+- **Maximum Priority**: Android PRIORITY_MAX for system override
+- **Forced Audio**: Bypasses Do Not Disturb for critical tasks
+- **Visual Prominence**: Enhanced notification display with alarm styling
+- **Persistent Alerts**: Similar behavior to phone alarm apps
 
-### **Form Features**
-- Enhanced task creation/editing with sticky bottom buttons
-- Due date/time preservation when toggling features
-- **Alarm Toggle Functionality**: Enables audible alarms at notification times
-- **Smart Alarm Scheduling**: Alarms at notification times or due time if no notifications
+**User Control**:
+- **Toggle Control**: Simple on/off switch for alarm feature
 - **Visual Feedback**: Clear descriptions of when alarms will sound
-- Custom repeat pattern UI with weekday circles
-- Safe area adaptive button positioning
+- **Context-Aware**: Shows different messages based on notification setup
 
-## **Technical Implementation**
+### **File Attachments** 📎
+Native file attachment system with multiple input methods:
 
-### **Navigation & Layout**
-- SafeAreaProvider wrapping entire app
-- useSafeAreaInsets() for dynamic padding
-- Adaptive bottom positioning for navigation bars
-- Consistent spacing across gesture and button navigation
+**Camera Integration**:
+- **Enhanced Reliability**: Fixed timeout issues on real devices
+- **Better Error Handling**: Detailed error messages with troubleshooting tips
+- **Retry Functionality**: Built-in retry options for failed captures
+- **Permission Management**: Platform-specific permission handling
 
-### **Icons & Styling**
-- react-native-vector-icons with Material Design icons
-- Platform-specific icon adaptation
-- Consistent sizing and color theming
+**Gallery Access**:
+- **Photo Library**: Native gallery integration with react-native-image-picker
+- **File Previews**: Thumbnail previews for attached images
+- **Metadata Display**: File size and type information
 
-### **Error Handling**
-- Storage operation error handling
-- Form validation (non-empty titles)
-- Notification scheduling fallbacks
-- User feedback for all error states
+**Attachment Management**:
+- **Modal Selection**: Clean bottom sheet interface for choosing attachment type
+- **File Removal**: Easy attachment deletion with confirmation
+- **Storage Optimization**: Efficient local file handling
 
-## **Development Build Compatibility**
-- Full expo-notifications functionality in development builds
-- File attachment features fully functional
-- Native icon libraries properly linked
-- Android-specific modal implementations for better UX
+### **Repeat Patterns** 🔄
+Flexible scheduling system for recurring tasks:
 
-## **Key User Flows**
-1. **Add Task**: FAB → Form → Save → Appears in Todo
-2. **Complete Task**: Detail view → Complete → Strikethrough → Auto-move after 24h
-3. **Edit Task**: Long press → Edit → Pre-filled form → Save
-4. **Delete Task**: Long press → Delete → Confirmation → Remove
-5. **Attach File**: Form → Add attachment → Modal picker → Select → Preview
-6. **Set Reminders**: Form → Notifications → Multiple offsets → Local scheduling
-7. **Custom Repeat**: Form → Repeat → Custom → Weekday selection → Auto-generation
-8. **Set Alarms**: Form → Enable Due Date → Toggle Alarm → Select notification times → High-priority alarms scheduled
-9. **Alarm-Only Tasks**: Form → Enable Due Date → Toggle Alarm → No notification times → Alarm at due time
+**Standard Patterns**:
+- **Daily**: Tasks repeat every day
+- **Weekly**: Tasks repeat weekly on the same day
+- **Monthly**: Tasks repeat monthly on the same date
 
-## **Platform Considerations**
-- Android navigation button vs gesture navigation adaptation
-- iOS safe area handling for different device types
-- Modal vs Alert implementation for better Android compatibility
-- Platform-specific icon and styling differences
-  textSecondary: string;         // Secondary text
-  textMuted: string;             // Muted/disabled text
-  border: string;                // Border colors
-  
-  // Semantic colors
-  error: string;                 // Error states
-  warning: string;               // Warning/urgent states
-  success: string;               // Success states
-  
-  // Tab navigation
-  tabBarBackground: string;      // Tab bar background
-  tabBarActiveTint: string;      // Active tab color
-  tabBarInactiveTint: string;    // Inactive tab color
-}
+**Custom Weekly Patterns**:
+- **Interactive Selection**: 7 circular weekday buttons (M,T,W,T,F,S,S)
+- **Multiple Days**: Select any combination of weekdays
+- **Visual Feedback**: Clear selected/unselected states
+- **Flexible Scheduling**: Perfect for work schedules or custom routines
+
+**Smart Task Generation**:
+- **Auto-creation**: New tasks generated automatically on completion
+- **History Preservation**: Original completed task remains in history
+- **Pattern Inheritance**: New tasks inherit all settings including alarms
+
+### **Task Form Enhancements** ✨
+Advanced form features for efficient task creation:
+
+**Data Preservation**:
+- **Smart Toggles**: Due date/time preserved when toggling features on/off
+- **State Memory**: Notification settings remembered during form changes
+- **No Data Loss**: User input protected during interface changes
+
+**Sticky Bottom Buttons**:
+- **Always Accessible**: Save/Cancel buttons always visible during scrolling
+- **Safe Area Adaptive**: Proper spacing for devices with/without home indicators
+- **One-Handed Use**: Optimized for thumb-reach accessibility
+
+**Alarm Integration**:
+- **Visual Feedback**: Clear descriptions showing when alarms will sound
+- **Context Awareness**: Different messages based on notification setup
+- **Smart Defaults**: Logical alarm behavior based on task configuration
+
+## **Installation & Setup**
+
+### **Development**
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+
+# Run on Android
+npm run android
+
+# Run on iOS  
+npm run ios
+```
+
+### **Build Requirements**
+- **Node.js**: 16.x or higher
+- **React Native CLI**: Latest version
+- **Android Studio**: For Android development
+- **Xcode**: For iOS development (macOS only)
+
+### **Permissions**
+The app requires the following permissions:
+
+**Android**:
+- `CAMERA`: Camera access for photo attachments
+- `READ_EXTERNAL_STORAGE`: Gallery access
+- `WRITE_EXTERNAL_STORAGE`: File storage
+- `VIBRATE`: Notification vibration
+- `RECEIVE_BOOT_COMPLETED`: Notification persistence
+- `WAKE_LOCK`: Alarm functionality
+
+**iOS**:
+- `NSCameraUsageDescription`: Camera access
+- `NSPhotoLibraryUsageDescription`: Photo library access
+
+## **Usage Guide**
+
+### **Basic Task Management**
+1. **Create Task**: Tap the floating action button (FAB) in bottom-right
+2. **View Details**: Tap any task to see full information
+3. **Edit Task**: Long-press task → "Edit" or use edit button in detail view
+4. **Complete Task**: Long-press → "Complete" or use button in detail view
+5. **Delete Task**: Long-press → "Delete" with confirmation
+
+### **Setting Up Alarms** 🔊
+1. **Create/Edit Task**: Open the task form
+2. **Enable Due Date**: Toggle the "Due Date" switch
+3. **Set Date/Time**: Select when the task is due
+4. **Enable Alarm**: Toggle the "Alarm" switch
+5. **Choose Notifications**: Select reminder times (optional)
+   - **With reminders**: Alarm sounds at each reminder time
+   - **No reminders**: Alarm sounds at due time
+6. **Save**: Task will show alarm indicator 🔊
+
+### **File Attachments** 📎
+1. **In Task Form**: Tap "Add attachment" button
+2. **Choose Method**: Select from modal options:
+   - **Take Photo**: Open camera (timeout issues fixed!)
+   - **Choose from Gallery**: Select from photo library
+   - **Choose Document**: Pick files (uses gallery picker)
+3. **Preview**: Attached files show thumbnail and info
+4. **Remove**: Tap X button to remove attachment
+
+### **Custom Repeat Patterns** 🔄
+1. **Task Form**: Select "Custom" from repeat options
+2. **Select Days**: Tap circular weekday buttons (M,T,W,T,F,S,S)
+3. **Multiple Selection**: Choose any combination of days
+4. **Save**: Task will repeat on selected weekdays
+
+### **Search & Organization** 🔍
+- **Search**: Use the search bar at top to filter tasks
+- **Todo Screen**: Active tasks + recent completions (24 hours)
+- **Completed Screen**: Full completion history
+- **Swipe Navigation**: Swipe between Todo/Completed screens
+
+## **Troubleshooting**
+
+### **Camera Issues**
+If camera doesn't open or times out:
+1. **Wait**: Give camera extra time to initialize
+2. **Lock/Unlock**: Lock and unlock your device
+3. **Close Apps**: Close other camera-using apps
+4. **Restart App**: Force close and reopen if persistent
+5. **Permissions**: Check camera permissions in device settings
+
+### **Alarm Issues**
+If alarms don't sound:
+1. **Check Permissions**: Ensure notification permissions are granted
+2. **Do Not Disturb**: Alarms should override DND mode
+3. **Battery Optimization**: Disable battery optimization for the app
+4. **Background Processing**: Allow background app refresh
+
+### **Performance**
+- **Storage**: App uses local storage only, no internet required
+- **Battery**: Minimal background usage except for scheduled notifications
+- **Space**: Attached files stored locally, manage as needed
+
+## **Technical Details**
+
+### **Architecture**
+- **Framework**: React Native + TypeScript
+- **State Management**: React hooks and context
+- **Storage**: AsyncStorage for persistence
+- **Navigation**: React Navigation with custom swipeable tabs
+- **Notifications**: Expo notifications with dual-priority system
+
+### **Key Components**
+- **SwipeableTabs**: Custom tab navigation with dot indicators
+- **TaskItem**: Individual task display with context menu
+- **TaskForm**: Comprehensive task creation/editing
+- **NotificationService**: Dual notification system manager
+- **StorageService**: Data persistence layer
+
+---
+
+## **Recent Updates**
+
+### **v2.0 - Major Architecture Upgrade**
+- ✅ **Migrated from Expo to React Native**: Better performance and compatibility
+- ✅ **Fixed Camera Timeout Issues**: Resolved device-specific camera problems
+- ✅ **Enhanced Alarm System**: Clock-app-style high-priority alarms
+- ✅ **Improved Error Handling**: Better user feedback and retry mechanisms
+- ✅ **Native Dependencies**: Optimized for both Expo and RN CLI builds
+- ✅ **Modal Attachments**: Cleaner attachment selection interface
+- ✅ **Permission Handling**: Platform-specific permission flows
+
+### **v1.x - Foundation**
+- ✅ **Core Task Management**: Full CRUD operations
+- ✅ **Swipeable Navigation**: Instagram-style tab system  
+- ✅ **Theme Integration**: Light/dark mode support
+- ✅ **File Attachments**: Camera and gallery integration
+- ✅ **Repeat Patterns**: Including custom weekly schedules
+- ✅ **Search System**: Real-time task filtering
+
+---
+
+**DoIt** - Your tasks, your way. Built with modern React Native for maximum performance and reliability.
 ```
 
 ---

@@ -145,7 +145,7 @@ export class NotificationService {
         }
 
         // Calculate precise seconds for scheduling
-        const secondsUntilNotification = Math.max(1, Math.floor((notificationTime.getTime() - now.getTime()) / 1000));
+        const secondsUntilNotification = Math.floor((notificationTime.getTime() - now.getTime()) / 1000);
         
         // Schedule regular notification
         const identifier = `${task.id}_${offsetMinutes}`;
@@ -194,7 +194,7 @@ export class NotificationService {
     
     try {
       // Calculate precise seconds for alarm scheduling
-      const secondsUntilAlarm = Math.max(1, Math.floor((notificationTime.getTime() - now.getTime()) / 1000));
+      const secondsUntilAlarm = Math.floor((notificationTime.getTime() - now.getTime()) / 1000);
       
       await Notifications.scheduleNotificationAsync({
         identifier: alarmIdentifier,
@@ -206,7 +206,7 @@ export class NotificationService {
           data: { taskId: task.id, type: 'alarm', isAlarm: true },
           sound: true, // Force sound
           priority: Notifications.AndroidNotificationPriority.MAX,
-          sticky: false,
+          sticky: true,
           categoryIdentifier: 'ALARM_CATEGORY',
           // Use alarm channel on Android for enhanced sound
           ...(Platform.OS === 'android' && {
@@ -223,8 +223,8 @@ export class NotificationService {
       // Android: schedule additional short, sound-only notifications to emulate a clock alarm
       // This creates a continuous audible alarm for up to 60 seconds without relying on JS timers
       if (Platform.OS === 'android') {
-        const intervalSeconds = 5; // Play a sound every 5 seconds
-        const repeats = 12; // 12 * 5s = 60 seconds total
+        const intervalSeconds = 2; // Play a sound every 2 seconds
+        const repeats = 30; // 30 * 2s = 60 seconds total
         for (let i = 1; i <= repeats; i++) {
           const followUpId = `${task.id}_alarm_${offsetMinutes}_echo_${i}`;
           const secondsUntilEcho = secondsUntilAlarm + i * intervalSeconds;
@@ -374,7 +374,7 @@ export class NotificationService {
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: 1,
+          seconds: 0,
           repeats: false,
         },
       });

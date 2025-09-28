@@ -42,21 +42,8 @@ export class AlarmService {
    */
   private static async triggerAlarm(task: Task, alarmId: string): Promise<void> {
     try {
-      if (Platform.OS === 'android') {
-        // On Android we rely on OS-scheduled echo notifications for continuous sound
-        // Just set auto-dismiss to clear timers and cancel pending notifications after 60s
-        setTimeout(() => {
-          this.dismissAlarm(alarmId);
-        }, 60000);
-      } else {
-        // iOS: use immediate notification + JS-driven sound loop as best-effort
-        await NotificationService.scheduleImmediateAlarm(task);
-        this.startAlarmSound(alarmId);
-        setTimeout(() => {
-          this.dismissAlarm(alarmId);
-        }, 60000);
-      }
-      
+      await NotificationService.scheduleImmediateAlarm(task);
+      this.startAlarmSound(alarmId);
     } catch (error) {
       console.warn('Failed to trigger alarm:', error);
     }
@@ -69,7 +56,7 @@ export class AlarmService {
     // For React Native, we'll use the notification system with repeated alerts
     // This creates a looping effect by scheduling multiple notifications
     let soundCount = 0;
-    const maxSounds = 12; // 60 seconds worth at 5-second intervals
+    const maxSounds = 30; // 60 seconds worth at 2-second intervals
     
     const soundInterval = setInterval(() => {
       if (soundCount >= maxSounds || !this.activeAlarms.has(alarmId)) {
@@ -80,7 +67,7 @@ export class AlarmService {
       // Trigger immediate notification sound
       NotificationService.playAlarmSound();
       soundCount++;
-    }, 5000); // Every 5 seconds
+    }, 2000); // Every 2 seconds
     
     // Store the interval so we can clear it
     this.activeAlarms.set(`${alarmId}_sound`, soundInterval as any);
